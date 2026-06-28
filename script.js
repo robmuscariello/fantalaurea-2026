@@ -254,17 +254,29 @@ async function gestisciCreazioneSquadra() {
 }
 
 async function gestisciAdesioneSquadra(idSquadra, nomeSquadra) {
+    console.log("Tentativo unione: " + nomeSquadra);
+
+    // 1. Salvataggio immediato sul dispositivo (così non lo perdiamo)
+    const datiUtente = { idSquadra: idSquadra, nomeSquadra: nomeSquadra };
+    localStorage.setItem("fantalaurea_2026_team", JSON.stringify(datiUtente));
+
+    // 2. Chiamata a Firebase
     try {
         await uniscitiASquadraEsistente(idSquadra);
-        salvaSessioneUtente(idSquadra, nomeSquadra, statoUtente.capitanoSelezionato);
         
-        agganciaAscoltatoreSquadra(idSquadra);
-        attivaFeedEStatoGlobale();
-        cambiaVista('view-dashboard');
-    } catch (errore) {
-        alert("Impossibile unirsi alla squadra selezionata.");
+        // 3. Caricamento forzato della Dashboard
+        // Usiamo un piccolo timeout per dare tempo al browser di processare
+        setTimeout(() => {
+            cambiaVista('view-dashboard');
+            agganciaAscoltatoreSquadra(idSquadra); // Questa funzione gestisce i dati in tempo reale
+            attivaFeedEStatoGlobale();
+        }, 100);
+
+    } catch (e) {
+        alert("Errore di connessione: " + e.message);
     }
 }
+
 
 function salvaSessioneUtente(idSquadra, nomeSquadra, capitano) {
     statoUtente.idSquadra = idSquadra;
