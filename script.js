@@ -1,6 +1,5 @@
 /* ==========================================================================
- /* ==========================================================================
-   FANTALAUREA ODONTOIATRIA 2026 - SCRIPT.JS DEFINITIVO (PLAYER APP)
+   FANTALAUREA ODONTOIATRIA 2026 - SCRIPT.JS DEFINITIVO E ANTI-BLOCCO
    ========================================================================== */
 
 import {
@@ -75,130 +74,158 @@ let statoUtente = {
     missioniInAttesa: {}
 };
 
-// --- INIZIO APP E GESTIONE VISTE ---
+// --- 1. INIZIALIZZAZIONE E GESTIONE GLOBALE CLICK ---
 document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById('view-splash')) {
-        inizializzaConfigurazione();
-        avviaFlussoApplicazione();
-    }
+    inizializzaConfigurazione();
+    impostaAscoltatoriGlobali();
+    avviaFlussoApplicazione();
 });
 
 function cambiaVista(idVista) {
-    const vistaAttiva = document.getElementById(idVista);
-    if (!vistaAttiva) return;
     document.querySelectorAll('.view').forEach(v => {
         v.classList.remove('active');
         v.classList.add('hidden');
     });
-    vistaAttiva.classList.remove('hidden');
-    setTimeout(() => vistaAttiva.classList.add('active'), 50);
-}
-
-// RIPRISTINO NAVIGAZIONE TAB IN DASHBOARD (Risolve Problema 6)
-function inizializzaTabDashboard() {
-    document.querySelectorAll('.bottom-nav .nav-btn').forEach(bottone => {
-        bottone.addEventListener('click', (e) => {
-            // Rimuove stato attivo dai bottoni e nasconde i contenuti
-            document.querySelectorAll('.bottom-nav .nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tc => {
-                tc.classList.remove('active');
-                tc.classList.add('hidden');
-            });
-
-            // Attiva tab cliccata
-            const targetTab = e.currentTarget.getAttribute('data-target');
-            e.currentTarget.classList.add('active');
-            const tabAttiva = document.getElementById(targetTab);
-            if(tabAttiva) {
-                tabAttiva.classList.remove('hidden');
-                tabAttiva.classList.add('active');
-            }
-        });
-    });
-}
-
-// --- FLUSSO PRINCIPALE (Risolve Problemi 3 e 4) ---
-async function avviaFlussoApplicazione() {
-    inizializzaTabDashboard(); // Riattiva la navigazione in basso
-
-    setTimeout(async () => {
-        try {
-            const u = await autenticaUtenteAnonimo();
-            statoUtente.uid = u.uid;
-            
-            const salvataggioSquadra = localStorage.getItem("fantalaurea_2026_team");
-            const salvataggioCapitano = localStorage.getItem("fantalaurea_2026_capitano");
-
-            if (salvataggioSquadra) {
-                const dati = JSON.parse(salvataggioSquadra);
-                statoUtente.idSquadra = dati.idSquadra;
-                statoUtente.nomeSquadra = dati.nomeSquadra;
-                statoUtente.capitanoSelezionato = dati.capitano || salvataggioCapitano;
-                
-                agganciaAscoltatoreSquadra(dati.idSquadra);
-                attivaFeedEStatoGlobale();
-                cambiaVista('view-dashboard');
-            } else if (salvataggioCapitano) {
-                statoUtente.capitanoSelezionato = salvataggioCapitano;
-                document.getElementById('selected-captain-name').innerText = salvataggioCapitano;
-                caricaTutteLeSquadreDelCapitano(salvataggioCapitano);
-            } else {
-                cambiaVista('view-welcome');
-            }
-        } catch (e) { 
-            console.error(e);
-            cambiaVista('view-welcome'); 
-        }
-    }, 1000);
-
-    // GESTIONE BOTTONI BASE
-    document.getElementById('btn-start').addEventListener('click', () => cambiaVista('view-rules'));
-    document.getElementById('btn-continue-rules').addEventListener('click', () => { 
-        generaGrigliaCapitani(); 
-        cambiaVista('view-captains'); 
-    });
-    document.getElementById('btn-create-team').addEventListener('click', gestisciCreazioneSquadra);
-
-    // TASTO CAMBIA CAPITANO (Risolve Problema 1)
-    // Cerca un bottone specifico o il primo bottone dentro la vista squadre
-    const btnCambiaCap = document.getElementById('btn-back-captains') || document.querySelector('#view-teams .btn-secondary');
-    if (btnCambiaCap) {
-        btnCambiaCap.addEventListener('click', () => {
-            localStorage.removeItem("fantalaurea_2026_capitano"); // Dimentica la scelta
-            generaGrigliaCapitani();
-            cambiaVista('view-captains'); // Torna alla griglia
-        });
+    const vistaAttiva = document.getElementById(idVista);
+    if (vistaAttiva) {
+        vistaAttiva.classList.remove('hidden');
+        // Piccolo ritardo per permettere al browser di renderizzare
+        setTimeout(() => vistaAttiva.classList.add('active'), 50);
     }
 }
 
-// --- CREAZIONE E CARICAMENTO SQUADRE (Risolve Problema 2) ---
+// QUESTA FUNZIONE RISOLVE I PROBLEMI DEI TASTI CHE NON FUNZIONANO (Tab, Cambia Capitano, ecc)
+function impostaAscoltatoriGlobali() {
+    document.body.addEventListener('click', (e) => {
+        
+        // GESTIONE NAVIGAZIONE TAB IN BASSO (Problema 4)
+        const navBtn = e.target.closest('.nav-btn');
+        if (navBtn) {
+            const targetTabId = navBtn.getAttribute('data-target');
+            if (targetTabId) {
+                // Rimuove active da tutti i bottoni e lo mette a quello cliccato
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                navBtn.classList.add('active');
+                
+                // Nasconde tutte le tab e mostra quella giusta
+                document.querySelectorAll('.tab-content').forEach(tc => {
+                    tc.classList.remove('active');
+                    tc.classList.add('hidden');
+                });
+                
+                const tabDaMostrare = document.getElementById(targetTabId);
+                if (tabDaMostrare) {
+                    tabDaMostrare.classList.remove('hidden');
+                    tabDaMostrare.classList.add('active');
+                }
+            }
+        }
+
+        // TASTO CAMBIA CAPITANO (Problema 5)
+        const btnCambiaCap = e.target.closest('#btn-back-captains') || e.target.closest('.btn-cambia-capitano');
+        if (btnCambiaCap) {
+            localStorage.removeItem("fantalaurea_2026_capitano");
+            statoUtente.capitanoSelezionato = null;
+            generaGrigliaCapitani();
+            cambiaVista('view-captains');
+        }
+
+        // TASTO INIZIA
+        if (e.target.closest('#btn-start')) cambiaVista('view-rules');
+        
+        // TASTO CONTINUA DOPO REGOLE
+        if (e.target.closest('#btn-continue-rules')) {
+            generaGrigliaCapitani();
+            cambiaVista('view-captains');
+        }
+
+        // TASTO CREA SQUADRA
+        if (e.target.closest('#btn-create-team')) {
+            gestisciCreazioneSquadra(e.target.closest('#btn-create-team'));
+        }
+
+        // AZIONI MISSIONI (+, -, Richiedi)
+        if (e.target.closest('.btn-richiedi')) {
+            eseguiRichiesta(e.target.closest('.btn-richiedi').getAttribute('data-id'), 1);
+        }
+        if (e.target.closest('.plus')) {
+            eseguiRichiesta(e.target.closest('.plus').getAttribute('data-id'), 1);
+        }
+        if (e.target.closest('.minus')) {
+            const id = e.target.closest('.minus').getAttribute('data-id');
+            const inAttesa = statoUtente.missioniInAttesa[id] || 0;
+            if (inAttesa > 0) eseguiRichiesta(id, -1);
+            else alert("Non hai richieste in attesa da annullare per questa missione.");
+        }
+    });
+}
+
+// --- 2. AVVIO APP E MEMORIA ---
+async function avviaFlussoApplicazione() {
+    try {
+        const u = await autenticaUtenteAnonimo();
+        if(u) statoUtente.uid = u.uid;
+        
+        const salvataggioSquadra = localStorage.getItem("fantalaurea_2026_team");
+        const salvataggioCapitano = localStorage.getItem("fantalaurea_2026_capitano");
+
+        if (salvataggioSquadra) {
+            const dati = JSON.parse(salvataggioSquadra);
+            statoUtente.idSquadra = dati.idSquadra;
+            statoUtente.nomeSquadra = dati.nomeSquadra;
+            statoUtente.capitanoSelezionato = dati.capitano || salvataggioCapitano;
+            
+            // Imposta subito dati base per evitare pagina vuota (Problema 3)
+            aggiornaInterfacciaDashboardBase(statoUtente.nomeSquadra, 0, statoUtente.capitanoSelezionato);
+            
+            cambiaVista('view-dashboard');
+            agganciaAscoltatoreSquadra(dati.idSquadra);
+            attivaFeedEStatoGlobale();
+        } else if (salvataggioCapitano) {
+            selezionaCapitano(salvataggioCapitano);
+        } else {
+            cambiaVista('view-welcome');
+        }
+    } catch (e) { 
+        console.error("Errore autenticazione:", e);
+        cambiaVista('view-welcome'); 
+    }
+}
+
+// --- 3. GESTIONE CAPITANI E SQUADRE ---
 function generaGrigliaCapitani() {
     const griglia = document.getElementById('captains-grid');
+    if (!griglia) return;
     griglia.innerHTML = '';
     CAPITANI.forEach(c => {
         const div = document.createElement('div');
         div.className = 'captain-card';
         div.innerHTML = `<div class="captain-avatar">🎓</div><div class="captain-name">${c}</div>`;
-        div.onclick = () => selezionaCapitano(c);
+        // Usiamo un listener diretto qui perché è generato dinamicamente
+        div.addEventListener('click', () => selezionaCapitano(c));
         griglia.appendChild(div);
     });
 }
 
-async function selezionaCapitano(nome) {
+function selezionaCapitano(nome) {
     statoUtente.capitanoSelezionato = nome;
-    localStorage.setItem("fantalaurea_2026_capitano", nome); // Salva memoria
-    document.getElementById('selected-captain-name').innerText = nome;
+    localStorage.setItem("fantalaurea_2026_capitano", nome);
+    
+    const elName = document.getElementById('selected-captain-name');
+    if(elName) elName.innerText = nome;
+    
+    cambiaVista('view-teams');
     caricaTutteLeSquadreDelCapitano(nome);
 }
 
 function caricaTutteLeSquadreDelCapitano(nome) {
-    cambiaVista('view-teams');
     const contenitore = document.getElementById('teams-list');
-    contenitore.innerHTML = '<p class="text-center text-chiaro mt-1">Caricamento squadre in corso...</p>';
+    if (!contenitore) return;
+    contenitore.innerHTML = '<p class="text-center text-chiaro mt-1">Cerco le squadre...</p>';
     
     caricaSquadrePerCapitano(nome, (squadre) => {
         contenitore.innerHTML = '';
-        if(squadre.length === 0) {
+        if(!squadre || squadre.length === 0) {
             contenitore.innerHTML = '<p class="text-center text-chiaro mt-1">Nessuna squadra presente. Creane una tu!</p>';
             return;
         }
@@ -206,60 +233,50 @@ function caricaTutteLeSquadreDelCapitano(nome) {
             const el = document.createElement('div');
             el.className = 'team-item';
             el.innerHTML = `<div>🔥 ${sq.nome}</div><div>${sq.membri} membri</div>`;
-            el.onclick = () => gestisciAdesioneSquadra(sq.id, sq.nome);
+            el.addEventListener('click', () => gestisciAdesioneSquadra(sq.id, sq.nome));
             contenitore.appendChild(el);
         });
     });
 }
 
-// --- ADESIONE E CREAZIONE CON BLOCCO CARICAMENTO (Risolve Problema 7) ---
+// --- 4. ADESIONE/CREAZIONE VELOCI (Risolve Problema 2 e 7) ---
 async function gestisciAdesioneSquadra(id, nome) {
-    const salvataggio = localStorage.getItem("fantalaurea_2026_team");
-    const datiSalvati = salvataggio ? JSON.parse(salvataggio) : null;
-
-    // Se è già la tua squadra, entra subito senza interrogare Firebase
-    if (datiSalvati && datiSalvati.idSquadra === id) {
-        agganciaAscoltatoreSquadra(id);
-        attivaFeedEStatoGlobale();
-        cambiaVista('view-dashboard');
-        return; 
-    }
-
-    // Blocca visivamente la lista per impedire click multipli
-    const lista = document.getElementById('teams-list');
-    lista.style.pointerEvents = "none";
-    lista.style.opacity = "0.5";
-
+    // 1. Salva subito e cambia vista in un millisecondo
     localStorage.setItem("fantalaurea_2026_team", JSON.stringify({
         idSquadra: id, 
         nomeSquadra: nome, 
         capitano: statoUtente.capitanoSelezionato
     }));
     
+    statoUtente.idSquadra = id;
+    statoUtente.nomeSquadra = nome;
+    
+    aggiornaInterfacciaDashboardBase(nome, "...", statoUtente.capitanoSelezionato);
+    cambiaVista('view-dashboard');
+    
+    // 2. Lavora in background con Firebase
     try {
         await uniscitiASquadraEsistente(id);
         agganciaAscoltatoreSquadra(id);
         attivaFeedEStatoGlobale();
-        cambiaVista('view-dashboard');
-    } catch (e) { 
-        alert("Errore di connessione: " + e.message); 
-        lista.style.pointerEvents = "auto";
-        lista.style.opacity = "1";
+    } catch (e) {
+        console.error("Errore adesione background:", e);
     }
 }
 
-async function gestisciCreazioneSquadra() {
-    const btn = document.getElementById('btn-create-team');
+async function gestisciCreazioneSquadra(btnElement) {
     const input = document.getElementById('new-team-name');
+    if (!input) return;
     const nome = input.value.trim();
     
-    if (!nome) return alert("Inserisci un nome valido per la tua squadra!");
+    if (!nome) {
+        alert("Scrivi un nome per la squadra!");
+        return;
+    }
     
-    // Blocca il bottone e cambia testo ("Ci mette 100 anni")
-    btn.disabled = true;
-    const testoOriginale = btn.innerText;
-    btn.innerText = "Creazione in corso...";
-
+    // Blocca il bottone e cambia vista subito
+    if(btnElement) btnElement.disabled = true;
+    
     try {
         const id = await creaNuovaSquadra(nome, statoUtente.capitanoSelezionato, statoUtente.uid);
         localStorage.setItem("fantalaurea_2026_team", JSON.stringify({
@@ -268,108 +285,102 @@ async function gestisciCreazioneSquadra() {
             capitano: statoUtente.capitanoSelezionato
         }));
         
+        statoUtente.idSquadra = id;
+        statoUtente.nomeSquadra = nome;
+        
+        aggiornaInterfacciaDashboardBase(nome, "...", statoUtente.capitanoSelezionato);
+        cambiaVista('view-dashboard');
+        
         agganciaAscoltatoreSquadra(id);
         attivaFeedEStatoGlobale();
-        cambiaVista('view-dashboard');
-        input.value = ''; // Pulisce il campo
+        input.value = ''; 
     } catch (e) { 
-        alert(e.message); 
-        btn.disabled = false;
-        btn.innerText = testoOriginale;
+        alert("Errore creazione: " + e.message); 
+    } finally {
+        if(btnElement) btnElement.disabled = false;
     }
 }
 
-// --- SINCRONIZZAZIONE DASHBOARD (Risolve Problema 4) ---
+// --- 5. AGGIORNAMENTO DASHBOARD (Risolve Problema 3) ---
+function aggiornaInterfacciaDashboardBase(nomeSquadra, punteggio, capitano) {
+    const elNomeSq = document.getElementById('dash-team-name');
+    const elPunti = document.getElementById('dash-team-score');
+    const elCapitano = document.getElementById('dash-captain-name');
+    
+    if (elNomeSq) elNomeSq.innerText = nomeSquadra || "La tua Squadra";
+    if (elPunti) elPunti.innerText = punteggio !== undefined ? punteggio : "0";
+    if (elCapitano) elCapitano.innerText = capitano || "Capitano";
+}
+
 function agganciaAscoltatoreSquadra(idSquadra) {
     ascoltaDatiSquadra(idSquadra, (dati) => {
         if (!dati) return;
         
-        document.getElementById('dash-team-name').innerText = dati.nome;
-        
-        // Recupera il nome del capitano sicuro da mostrare
-        const nomeCapitanoReale = dati.capitano || statoUtente.capitanoSelezionato || localStorage.getItem("fantalaurea_2026_capitano");
-        const elementoCapitano = document.getElementById('dash-captain-name');
-        if (elementoCapitano) elementoCapitano.innerText = nomeCapitanoReale;
-        
-        document.getElementById('dash-team-score').innerText = dati.punteggio || 0;
+        // Aggiorna interfaccia con dati reali da Firebase
+        aggiornaInterfacciaDashboardBase(dati.nome, dati.punteggio || 0, dati.capitano || statoUtente.capitanoSelezionato);
         
         statoUtente.missioniApprovate = dati.missioniApprovate || {};
         statoUtente.missioniInAttesa = dati.missioniInAttesa || {};
         
-        // Aggiorna totale missioni
+        // Calcolo missioni completate
         const totaleCompletate = Object.values(statoUtente.missioniApprovate).reduce((a, b) => a + b, 0);
-        const elementoMissioni = document.getElementById('dash-missions-completed');
-        if(elementoMissioni) elementoMissioni.innerText = totaleCompletate;
+        const elMissCompletate = document.getElementById('dash-missions-completed');
+        if(elMissCompletate) elMissCompletate.innerText = totaleCompletate;
 
         renderizzaPannelloMissioni();
     });
 }
 
-// --- RENDERING COMPLETO MISSIONI (Risolve Problema 5) ---
+// --- 6. RENDER MISSIONI E FEED ---
 function renderizzaPannelloMissioni() {
     const contenitore = document.getElementById('missions-container');
     if(!contenitore) return;
     contenitore.innerHTML = '';
 
-    Object.keys(CATEGORIE).forEach(chiaveCategoria => {
+    Object.keys(CATEGORIE).forEach(chiave => {
         const sezione = document.createElement('div');
         sezione.className = 'category-section';
-        sezione.innerHTML = `<h3 class="category-title">${CATEGORIE[chiaveCategoria]}</h3>`;
+        sezione.innerHTML = `<h3 class="category-title">${CATEGORIE[chiave]}</h3>`;
         
-        const missioniFiltrate = MISSIONS.filter(m => m.category === chiaveCategoria);
+        const missioniCat = MISSIONS.filter(m => m.category === chiave);
         
-        missioniFiltrate.forEach(m => {
+        missioniCat.forEach(m => {
             const card = document.createElement('div');
-            card.className = `mission-card category-${chiaveCategoria}`;
+            card.className = `mission-card category-${chiave}`;
             
-            const countApprovati = statoUtente.missioniApprovate[m.id] || 0;
-            const countInAttesa = statoUtente.missioniInAttesa[m.id] || 0;
-            const segnoPunti = m.points > 0 ? `+${m.points}` : `${m.points}`;
+            const completate = statoUtente.missioniApprovate[m.id] || 0;
+            const inAttesa = statoUtente.missioniInAttesa[m.id] || 0;
+            const segno = m.points > 0 ? `+${m.points}` : `${m.points}`;
             
-            let htmlAzione = '';
+            let bloccoAzioni = '';
             
-            // Logica cumulabili vs standard
             if (m.cumulable) {
-                htmlAzione = `
+                bloccoAzioni = `
                     <div class="cumulable-counter">
                         <button class="counter-btn minus" data-id="${m.id}">-</button>
-                        <span class="counter-value">${countApprovati}</span>
+                        <span class="counter-value">${completate}</span>
                         <button class="counter-btn plus" data-id="${m.id}">+</button>
                     </div>
-                    ${countInAttesa > 0 ? `<span class="status-badge waiting">In attesa (+${countInAttesa}) ⏳</span>` : ''}
+                    ${inAttesa > 0 ? `<span class="status-badge waiting">Attesa (+${inAttesa}) ⏳</span>` : ''}
                 `;
             } else {
-                if (countApprovati > 0) {
-                    htmlAzione = `<span class="status-badge approved">Completata ✅</span>`;
-                } else if (countInAttesa > 0) {
-                    htmlAzione = `<span class="status-badge waiting">In attesa ⏳</span>`;
+                if (completate > 0) {
+                    bloccoAzioni = `<span class="status-badge approved">Completata ✅</span>`;
+                } else if (inAttesa > 0) {
+                    bloccoAzioni = `<span class="status-badge waiting">In attesa ⏳</span>`;
                 } else {
-                    htmlAzione = `<button class="btn btn-primary btn-small btn-richiedi" data-id="${m.id}">Richiedi approvazione</button>`;
+                    bloccoAzioni = `<button class="btn btn-primary btn-small btn-richiedi" data-id="${m.id}">Richiedi</button>`;
                 }
             }
 
             card.innerHTML = `
                 <div class="mission-header">
                     <span class="mission-name">${m.name}</span>
-                    <span class="mission-points">${segnoPunti} pt</span>
+                    <span class="mission-points">${segno} pt</span>
                 </div>
                 <div class="mission-desc">${m.desc}</div>
-                <div class="mission-footer">
-                    ${htmlAzione}
-                </div>
+                <div class="mission-footer">${bloccoAzioni}</div>
             `;
-
-            // Aggancio click missioni
-            if (!m.cumulable && countApprovati === 0 && countInAttesa === 0) {
-                card.querySelector('.btn-richiedi').onclick = () => eseguiRichiesta(m.id, 1);
-            } else if (m.cumulable) {
-                card.querySelector('.plus').onclick = () => eseguiRichiesta(m.id, 1);
-                card.querySelector('.minus').onclick = () => {
-                    if (countInAttesa > 0) eseguiRichiesta(m.id, -1);
-                    else alert("Non hai richieste in attesa da rimuovere.");
-                };
-            }
-            
             sezione.appendChild(card);
         });
         contenitore.appendChild(sezione);
@@ -377,21 +388,22 @@ function renderizzaPannelloMissioni() {
 }
 
 async function eseguiRichiesta(idMissione, qta) {
+    if (!statoUtente.idSquadra) return alert("Errore: Nessuna squadra trovata.");
     try {
         await inviaRichiestaMissione(statoUtente.idSquadra, statoUtente.nomeSquadra, statoUtente.capitanoSelezionato, idMissione, qta);
     } catch (e) { 
-        alert("Errore nell'invio: " + e.message); 
+        alert("Errore invio richiesta: " + e.message); 
     }
 }
 
-// --- GESTIONE FEED IN TEMPO REALE ---
 function attivaFeedEStatoGlobale() {
     ascoltaFeedApprovazioni((notifiche) => {
         const c = document.getElementById('feed-container');
         if(!c) return;
         c.innerHTML = '';
-        if (notifiche.length === 0) {
-            c.innerHTML = `<p class="text-center text-chiaro mt-2">Il feed si aggiornerà in diretta!</p>`;
+        if (!notifiche || notifiche.length === 0) {
+            c.innerHTML = `<p class="text-center text-chiaro mt-2">Nessuna attività recente. Sii il primo!</p>`;
+            return;
         }
         notifiche.forEach((n, i) => {
             if (i === 0 && (Date.now() - n.timestamp) < 10000) creaToastNotifica(n.squadra, n.missione);
@@ -400,12 +412,6 @@ function attivaFeedEStatoGlobale() {
             el.innerHTML = `🏆 <strong>"${n.squadra}"</strong> ha completato <strong>"${n.missione}"</strong>!`;
             c.appendChild(el);
         });
-    });
-
-    ascoltaStatoGiocoFinale((statoGioco) => {
-        if (statoGioco && statoGioco.classificaPubblica) {
-            mostraClassificaFinale(statoGioco.classificaCapitani, statoGioco.classificaSquadre);
-        }
     });
 }
 
@@ -416,10 +422,5 @@ function creaToastNotifica(nomeSq, nomeMis) {
     b.className = 'toast-banner';
     b.innerHTML = `🏆 "${nomeSq}" ha completato "${nomeMis}"!`;
     c.appendChild(b);
-    setTimeout(() => b.remove(), 5000);
-}
-
-function mostraClassificaFinale(capitani, squadre) {
-    cambiaVista('view-final-leaderboard');
-    // Rendering classifiche (aggiungi contenitori nel HTML se mancanti)
+    setTimeout(() => b.remove(), 4000);
 }
