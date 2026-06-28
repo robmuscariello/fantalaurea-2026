@@ -4,158 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fantalaurea Odontoiatria 2026</title>
-    
     <link rel="stylesheet" href="style.css">
-    
     <link rel="manifest" href="manifest.json">
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+<div id="app-container">
 
-    <div id="app-container">
+    <!-- SPLASH -->
+    <section id="view-splash" class="view active">
+        <div class="splash-content">
+            <h1 class="logo-text">🎓<br>Fantalaurea</h1>
+            <p class="logo-subtext">Odontoiatria 2026</p>
+        </div>
+    </section>
 
-        <section id="view-splash" class="view active">
-            <div class="splash-content">
-                <h1 class="logo-text">🎓<br>Fantalaurea</h1>
-                <p class="logo-subtext">Odontoiatria 2026</p>
+    <!-- BENVENUTO -->
+    <section id="view-welcome" class="view hidden">
+        <div class="card container-center">
+            <h2 class="title-gold">🏆 Fantalaurea Odontoiatria 2026</h2>
+            <p>Oggi non si vince un premio importante.</p>
+            <p>Si vince qualcosa di molto più bello.</p>
+            <p>La possibilità di rendere <strong>indimenticabile</strong> la giornata del tuo Capitano.</p>
+            <p>Forma una squadra, completa missioni e aiuta il tuo Capitano a conquistare la gloria.</p>
+            <button id="btn-start" class="btn btn-primary btn-large mt-2">INIZIA</button>
+        </div>
+    </section>
+
+    <!-- REGOLAMENTO (FIX: vista separata con id corretto usato nello script) -->
+    <section id="view-welcome-rules" class="view hidden">
+        <div class="card container-center">
+            <h2 class="title-green">📜 Regolamento</h2>
+            <ul class="rules-list">
+                <li>Scegli un Capitano tra i laureandi di oggi.</li>
+                <li>Crea una squadra oppure unisciti a una già esistente.</li>
+                <li>Completa le missioni durante la giornata.</li>
+                <li>Alcune missioni richiedono l'approvazione dell'organizzatore.</li>
+                <li>Le missioni cumulabili si possono completare più volte.</li>
+                <li>La classifica resterà nascosta fino alla fine della festa.</li>
+            </ul>
+            <button id="btn-continue-rules" class="btn btn-primary btn-large mt-2">CONTINUA</button>
+        </div>
+    </section>
+
+    <!-- SCELTA CAPITANO -->
+    <section id="view-captains" class="view hidden">
+        <div class="header-top">
+            <h2 class="title-green">Scegli il tuo Capitano</h2>
+        </div>
+        <div id="captains-grid" class="grid-container"></div>
+    </section>
+
+    <!-- SCELTA / CREAZIONE SQUADRA -->
+    <section id="view-teams" class="view hidden">
+        <div class="header-top">
+            <h2 class="title-green">Squadre per<br><span id="selected-captain-name" class="text-gold"></span></h2>
+            <button id="btn-back-captains" class="btn btn-secondary btn-small mt-1">← Cambia Capitano</button>
+        </div>
+
+        <div class="card">
+            <h3 class="title-green" style="margin-bottom:12px;">Crea una nuova squadra</h3>
+            <input type="text" id="new-team-name" placeholder="Nome della squadra" autocomplete="off" maxlength="30">
+            <button id="btn-create-team" class="btn btn-primary mt-1">Crea Squadra</button>
+        </div>
+
+        <div style="margin-top:8px;">
+            <h3 class="text-center mt-2" style="font-size:14px; color:var(--testo-chiaro); margin-bottom:10px;">Oppure unisciti a una esistente:</h3>
+            <div id="teams-list" class="list-container"></div>
+        </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view hidden" style="padding:0; overflow:hidden;">
+
+        <header class="dashboard-header bg-green text-white">
+            <div class="team-info">
+                <h2 id="dash-team-name" style="font-size:18px;">Nome Squadra</h2>
+                <p class="subtitle">Capitano: <span id="dash-captain-name" class="text-gold font-bold">–</span></p>
             </div>
-        </section>
-
-        <section id="view-welcome" class="view hidden">
-            <div class="card container-center">
-                <h2 class="title-gold">🏆 Fantalaurea Odontoiatria 2026</h2>
-                <p>Oggi non si vince un premio importante.</p>
-                <p>Si vince qualcosa di molto più bello.</p>
-                <p>La possibilità di rendere indimenticabile la giornata del tuo Capitano.</p>
-                <p>Forma una squadra, completa missioni e aiuta il tuo Capitano a conquistare la gloria.</p>
-                <button id="btn-start" class="btn btn-primary btn-large mt-2">INIZIA</button>
-            </div>
-        </section>
-
-        <section id="view-rules" class="view hidden">
-            <div class="card container-center">
-                <h2 class="title-green">📜 Regolamento</h2>
-                <ul class="rules-list">
-                    <li>Scegli un Capitano.</li>
-                    <li>Crea una squadra oppure unisciti ad una esistente.</li>
-                    <li>Completa le missioni.</li>
-                    <li>Alcune missioni richiedono l'approvazione dell'organizzatore.</li>
-                    <li>Alcune missioni sono cumulabili.</li>
-                    <li>La classifica resterà nascosta fino alla fine della festa.</li>
-                </ul>
-                <button id="btn-continue-rules" class="btn btn-primary btn-large mt-2">CONTINUA</button>
-            </div>
-        </section>
-
-        <section id="view-captains" class="view hidden">
-            <div class="header-top">
-                <h2 class="title-green">Scegli il tuo Capitano</h2>
-            </div>
-            <div id="captains-grid" class="grid-container"></div>
-        </section>
-
-        <section id="view-teams" class="view hidden">
-            <div class="header-top">
-                <h2 class="title-green">Squadre per <br><span id="selected-captain-name" class="text-gold"></span></h2>
-                <button id="btn-back-captains" class="btn btn-secondary btn-small">Cambia Capitano</button>
-            </div>
-
-            <div class="card create-team-section">
-                <h3>Crea una nuova squadra</h3>
-                <input type="text" id="new-team-name" placeholder="Nome della squadra" autocomplete="off">
-                <button id="btn-create-team" class="btn btn-primary mt-1">Crea Squadra</button>
-            </div>
-
-            <div class="existing-teams-section">
-                <h3 class="text-center mt-2">Oppure unisciti a una esistente:</h3>
-                <div id="teams-list" class="list-container"></div>
-            </div>
-        </section>
-
-        <section id="view-dashboard" class="view hidden">
-            
-            <header class="dashboard-header bg-green text-white">
-                <div class="team-info">
-                    <h2 id="dash-team-name">Nome Squadra</h2>
-                    <p class="subtitle">Capitano: <span id="dash-captain-name" class="text-gold font-bold"></span></p>
+            <div class="score-info">
+                <div class="score-box">
+                    <span class="score-label">Punti</span>
+                    <span id="dash-team-score" class="score-value text-gold">0</span>
                 </div>
-                <div class="score-info">
-                    <div class="score-box">
-                        <span class="score-label">Punti</span>
-                        <span id="dash-team-score" class="score-value text-gold">0</span>
-                    </div>
-                    <div class="missions-box">
-                        <span class="score-label">Missioni</span>
-                        <span id="dash-missions-completed" class="score-value">0</span>
-                    </div>
+                <div class="missions-box">
+                    <span class="score-label">Missioni</span>
+                    <span id="dash-missions-completed" class="score-value">0</span>
                 </div>
-            </header>
+            </div>
+        </header>
 
-            <main id="dashboard-content" class="dashboard-main">
-                
-                <div id="tab-missions" class="tab-content active">
-                    <div id="missions-container"></div>
-                </div>
+        <main id="dashboard-content" class="dashboard-main">
 
-                <div id="tab-feed" class="tab-content hidden">
-                    <h3 class="title-green text-center mt-1">Feed Live 📡</h3>
-                    <div id="feed-container" class="list-container mt-1"></div>
-                </div>
-
-                <div id="tab-rules" class="tab-content hidden">
-                    <div class="card mt-1">
-                        <h3 class="title-green">Regolamento</h3>
-                        <div id="dashboard-rules-container">
-                            </div>
-                    </div>
-                </div>
-            </main>
-
-            <nav class="bottom-nav">
-                <button class="nav-btn active" data-target="tab-missions">🎯<br>Missioni</button>
-                <button class="nav-btn" data-target="tab-feed">📡<br>Feed</button>
-                <button class="nav-btn" data-target="tab-rules">📜<br>Regole</button>
-            </nav>
-        </section>
-
-        <section id="view-final-leaderboard" class="view hidden">
-            <div class="header-top text-center">
-                <h1 class="title-gold">🏆 Classifica Finale</h1>
+            <!-- TAB MISSIONI -->
+            <div id="tab-missions" class="tab-content" style="display:block;">
+                <div id="missions-container"></div>
             </div>
 
-            <div class="card gold-border mt-2">
-                <h2 class="title-green text-center">Classifica Capitani</h2>
-                <div id="final-captains-list" class="list-container mt-1"></div>
+            <!-- TAB FEED -->
+            <div id="tab-feed" class="tab-content" style="display:none;">
+                <h3 class="title-green text-center mt-1">Feed Live 📡</h3>
+                <div id="feed-container" class="list-container mt-1"></div>
             </div>
 
-            <div class="card mt-2">
-                <h2 class="title-green text-center">Classifica Squadre</h2>
-                <div id="final-teams-list" class="list-container mt-1"></div>
+            <!-- TAB REGOLAMENTO -->
+            <div id="tab-rules" class="tab-content" style="display:none;">
+                <div class="card mt-1">
+                    <h3 class="title-green">📜 Regolamento</h3>
+                    <div id="dashboard-rules-container"></div>
+                </div>
             </div>
 
-            <div class="card text-center mt-2 pb-2">
-                <h2>🎉</h2>
-                <p>Grazie a tutti per aver partecipato al <strong>Fantalaurea Odontoiatria 2026</strong>.</p>
-                <p>Speriamo di aver reso questa giornata ancora più memorabile.</p>
-            </div>
-        </section>
+        </main>
 
-        <div id="toast-container"></div>
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-target="tab-missions">🎯<br>Missioni</button>
+            <button class="nav-btn"        data-target="tab-feed">📡<br>Feed</button>
+            <button class="nav-btn"        data-target="tab-rules">📜<br>Regole</button>
+        </nav>
 
-    </div>
+    </section>
 
-    <script type="module" src="firebase.js"></script>
-    <script type="module" src="script.js"></script>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => {
-                    console.error('Service Worker registration failed: ', err);
-                });
-            });
-        }
-    </script>
+    <!-- CLASSIFICA FINALE -->
+    <section id="view-final-leaderboard" class="view hidden">
+        <div class="header-top text-center">
+            <h1 class="title-gold">🏆 Classifica Finale</h1>
+        </div>
+        <div class="card gold-border mt-2">
+            <h2 class="title-green text-center">Classifica Capitani</h2>
+            <div id="final-captains-list" class="list-container mt-1"></div>
+        </div>
+        <div class="card mt-2">
+            <h2 class="title-green text-center">Classifica Squadre</h2>
+            <div id="final-teams-list" class="list-container mt-1"></div>
+        </div>
+        <div class="card text-center mt-2 pb-2">
+            <h2>🎉</h2>
+            <p>Grazie a tutti per aver partecipato al <strong>Fantalaurea Odontoiatria 2026</strong>.</p>
+            <p>Speriamo di aver reso questa giornata ancora più memorabile.</p>
+        </div>
+    </section>
+
+    <!-- TOAST -->
+    <div id="toast-container"></div>
+
+</div>
+
+<script type="module" src="firebase.js"></script>
+<script type="module" src="script.js"></script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .catch(err => console.warn('SW non registrato:', err));
+        });
+    }
+</script>
 </body>
 </html>

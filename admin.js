@@ -1,5 +1,7 @@
 /* ==========================================================================
-   FANTALAUREA ODONTOIATRIA 2026 - LOGICA REVERSIBILE PANNELLO REGIA (ADMIN)
+   FANTALAUREA ODONTOIATRIA 2026 — admin.js
+   FIX: elimina squadra, preview classifica, lista missioni completate,
+        gestione errori, tab navigazione robusta
    ========================================================================== */
 
 import {
@@ -9,226 +11,359 @@ import {
     adminEseguiApprovazione,
     adminEseguiRifiuto,
     adminAggiornaPunteggioDiretto,
+    adminEliminaSquadra,
     adminPubblicaClassifica
 } from './firebase.js';
 
-import { MISSIONS } from './script.js';
+import { MISSIONS, CAPITANI } from './script.js';
 
-// --- CONFIGURAZIONE SICUREZZA ---
-const ADMIN_PASSWORD_CORRETTA = "Odonto2026"; // Roberta, puoi cambiare questa password a tuo piacimento
+/* ------------------------------------------------------------------ */
+/*  CONFIGURAZIONE                                                       */
+/* ------------------------------------------------------------------ */
 
-// --- STATO LOCALE ADMIN ---
+const ADMIN_PASSWORD = "Odonto2026"; // Cambia a tuo piacimento
+
+/* ------------------------------------------------------------------ */
+/*  STATO LOCALE                                                        */
+/* ------------------------------------------------------------------ */
+
 let tutteLeSquadre = [];
 
-// --- INIZIALIZZAZIONE ---
+/* ------------------------------------------------------------------ */
+/*  INIZIALIZZAZIONE                                                    */
+/* ------------------------------------------------------------------ */
+
 document.addEventListener("DOMContentLoaded", () => {
     inizializzaConfigurazione();
-    CONFIGURA_EVENTI_ADMIN();
+    configuraEventiAdmin();
 });
 
-// --- GESTIONE ACCESSO E NAVIGAZIONE TAB ---
-function CONFIGURA_EVENTI_ADMIN() {
-    const btnLogin = document.getElementById('btn-admin-login');
-    const inputPassword = document.getElementById('admin-password');
+/* ------------------------------------------------------------------ */
+/*  LOGIN E NAVIGAZIONE TAB                                             */
+/* ------------------------------------------------------------------ */
 
-    // Controllo Password di Accesso
-    btnLogin.addEventListener('click', () => {
-        if (inputPassword.value === ADMIN_PASSWORD_CORRETTA) {
+function configuraEventiAdmin() {
+
+    // Login
+    const btnLogin = document.getElementById('btn-admin-login');
+    const inputPwd = document.getElementById('admin-password');
+    if (!btnLogin || !inputPwd) return;
+
+    const doLogin = () => {
+        if (inputPwd.value === ADMIN_PASSWORD) {
             document.getElementById('admin-view-login').classList.remove('active');
             document.getElementById('admin-view-login').classList.add('hidden');
-            
-            const pannelloAdmin = document.getElementById('admin-view-panel');
-            pannelloAdmin.classList.remove('hidden');
-            setTimeout(() => pannelloAdmin.classList.add('active'), 50);
-
-            // Avvia i flussi di ascolto sincronizzati solo dopo il login superato
-            AVVIA_MONITORAGGIO_LIVE();
+            const pannello = document.getElementById('admin-view-panel');
+            pannello.classList.remove('hidden');
+            requestAnimationFrame(() => setTimeout(() => pannello.classList.add('active'), 30));
+            avviaMonitoraggioLive();
         } else {
             alert("⚠️ Password errata! Accesso negato.");
-            inputPassword.value = "";
+            inputPwd.value = '';
+            inputPwd.focus();
         }
-    });
+    };
 
-    // Navigazione tra le Tab interne del pannello di controllo
-    document.querySelectorAll('.admin-nav .btn').forEach(bottone => {
-        bottone.addEventListener('click', (e) => {
+    btnLogin.addEventListener('click', doLogin);
+    inputPwd.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+    // Navigazione tab admin
+    document.querySelectorAll('.admin-nav .btn').forEach(btn => {
+        btn.addEventListener('click', () => {
             document.querySelectorAll('.admin-nav .btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
             document.querySelectorAll('#admin-view-panel .tab-content').forEach(tc => {
-                tc.classList.remove('active');
-                tc.classList.add('hidden');
+                tc.style.display = 'none';
             });
 
-            e.currentTarget.classList.add('active');
-            const targetTab = e.currentTarget.getAttribute('data-target');
-            
-            const tabAttiva = document.getElementById(targetTab);
-            tabAttiva.classList.remove('hidden');
-            tabAttiva.classList.add('active');
+            const target = document.getElementById(btn.dataset.target);
+            if (target) target.style.display = 'block';
+
+            // Aggiorna preview classifica ogni volta che si apre la tab "Fine Gioco"
+            if (btn.dataset.target === 'admin-tab-control') renderizzaPreviewClassifica();
         });
     });
 
-    // Gestione Chiusura Gioco e Pubblicazione Classifiche
-    document.getElementById('btn-admin-publish').addEventListener('click', ELABORA_E_PUBBLICA_CLASSIFICHE);
+    // Pubblica classifica
+    const btnPubblica = document.getElementById('btn-admin-publish');
+    if (btnPubblica) btnPubblica.addEventListener('click', elaboraEPubblicaClassifiche);
 }
 
-// --- ATTIVAZIONE FLUSSI REAL-TIME ---
-function AVVIA_MONITORAGGIO_LIVE() {
-    
-    // 1. Ascolto in tempo reale delle Richieste in Sospeso
+/* ------------------------------------------------------------------ */
+/*  MONITORAGGIO LIVE                                                   */
+/* ------------------------------------------------------------------ */
+
+function avviaMonitoraggioLive() {
+
+    // ── RICHIESTE IN ATTESA ─────────────────────────────────────────
     adminAscoltaRichiesteInAttesa((richieste) => {
-        // Aggiorna il contatore numerico sul pulsante della barra di navigazione
-        document.getElementById('admin-count-requests').innerText = richieste.length;
-        
-        const contenitoreRichieste = document.getElementById('admin-requests-list');
-        contenitoreRichieste.innerHTML = '';
+        const badge = document.getElementById('admin-count-requests');
+        if (badge) badge.innerText = richieste.length;
+
+        const c = document.getElementById('admin-requests-list');
+        if (!c) return;
+        c.innerHTML = '';
 
         if (richieste.length === 0) {
-            contenitoreRichieste.innerHTML = `<p class="text-center text-chiaro mt-2">Nessuna richiesta in attesa. Goditi la festa! 🍹</p>`;
+            c.innerHTML = `<p class="text-center text-chiaro mt-2">Nessuna richiesta in attesa. Goditi la festa! 🍹</p>`;
             return;
         }
 
         richieste.forEach(req => {
-            // Recupera l'oggetto missione corrispondente per estrarre dettagli e punteggio base
             const infoMissione = MISSIONS.find(m => m.id === req.idMissione);
             if (!infoMissione) return;
 
-            // Calcolo effettivo dei punti in base alla variazione della richiesta (es. +1 o -1)
-            const puntiTotaliRichiesta = infoMissione.points * req.variazione;
+            const punti = infoMissione.points * req.variazione;
+            const isMalus = infoMissione.category === 'malus';
 
             const card = document.createElement('div');
             card.className = `mission-card category-${infoMissione.category}`;
             card.innerHTML = `
                 <div class="mission-header">
-                    <span class="mission-name">🔥 ${req.nomeSquadra} <small style="font-weight:400; color:var(--testo-chiaro);">(${req.capitano})</small></span>
-                    <span class="mission-points ${infoMissione.category === 'malus' ? 'bg-red' : ''}">
-                        ${puntiTotaliRichiesta > 0 ? `+${puntiTotaliRichiesta}` : puntiTotaliRichiesta} pt
+                    <span class="mission-name">
+                        🔥 ${req.nomeSquadra}
+                        <small style="font-weight:400; color:var(--testo-chiaro);">(${req.capitano})</small>
+                    </span>
+                    <span class="mission-points" style="${isMalus ? 'background:#FEE2E2;color:var(--malus)' : ''}">
+                        ${punti > 0 ? '+' : ''}${punti} pt
                     </span>
                 </div>
-                <div class="mission-desc" style="margin-top:5px;">
-                    <strong>Missione richiesta:</strong> ${infoMissione.name}<br>
-                    <span style="font-style:italic;">"${infoMissione.desc}"</span>
+                <div class="mission-desc" style="margin-top:6px;">
+                    <strong>${infoMissione.name}</strong><br>
+                    <em>"${infoMissione.desc}"</em>
                 </div>
                 <div class="admin-card-action">
-                    <button class="btn btn-approve btn-small btn-action-approve" data-id="${req.id}">APPROVA ✅</button>
-                    <button class="btn btn-reject btn-small btn-action-reject" data-id="${req.id}">RIFIUTA ❌</button>
+                    <button class="btn btn-approve btn-small">APPROVA ✅</button>
+                    <button class="btn btn-reject  btn-small">RIFIUTA ❌</button>
                 </div>
             `;
 
-            // Assegnazione logica ai pulsanti di azione della card
-            card.querySelector('.btn-action-approve').addEventListener('click', async () => {
-                await adminEseguiApprovazione(
-                    req.id, 
-                    req.idSquadra, 
-                    req.idMissione, 
-                    infoMissione.name, 
-                    req.nomeSquadra, 
-                    req.variazione, 
-                    puntiTotaliRichiesta
-                );
+            card.querySelector('.btn-approve').addEventListener('click', async () => {
+                card.style.opacity = '0.5';
+                card.style.pointerEvents = 'none';
+                try {
+                    await adminEseguiApprovazione(
+                        req.id, req.idSquadra, req.idMissione,
+                        infoMissione.name, req.nomeSquadra,
+                        req.variazione, punti
+                    );
+                } catch(e) { alert("Errore approvazione: " + e.message); }
             });
 
-            card.querySelector('.btn-action-reject').addEventListener('click', async () => {
-                await adminEseguiRifiuto(req.id, req.idSquadra, req.idMissione, req.variazione);
+            card.querySelector('.btn-reject').addEventListener('click', async () => {
+                card.style.opacity = '0.5';
+                card.style.pointerEvents = 'none';
+                try {
+                    await adminEseguiRifiuto(req.id, req.idSquadra, req.idMissione, req.variazione);
+                } catch(e) { alert("Errore rifiuto: " + e.message); }
             });
 
-            contenitoreRichieste.appendChild(card);
+            c.appendChild(card);
         });
     });
 
-    // 2. Ascolto in tempo reale delle Squadre per la Tab di Correzione/Classifica Nascosta
+    // ── TUTTE LE SQUADRE ────────────────────────────────────────────
     adminAscoltaTutteLeSquadre((squadre) => {
-        tutteLeSquadre = squadre; // Aggiorna la variabile globale d'appoggio per il calcolo finale
-        
-        const contenitoreSquadre = document.getElementById('admin-teams-list');
-        contenitoreSquadre.innerHTML = '';
-
-        squadre.forEach((sq, index) => {
-            const cardSq = document.createElement('div');
-            cardSq.className = 'card';
-            cardSq.style.padding = '15px';
-            cardSq.innerHTML = `
-                <div style="display:flex; justify-content:space-between; font-weight:600;">
-                    <span>${index + 1}. ${sq.nome} <small style="font-weight:400; color:var(--testo-chiaro);">(${sq.capitano})</small></span>
-                    <span class="text-gold">${sq.punteggio || 0} pt</span>
-                </div>
-                <div class="quick-score-panel">
-                    <span style="font-size:12px; flex:1;">Correzione rapida punti:</span>
-                    <input type="number" class="input-delta-punti" placeholder="+/- Punti" step="1">
-                    <button class="btn btn-primary btn-small btn-assegna-diretto" style="width:auto;">Invia</button>
-                </div>
-            `;
-
-            // Gestione dell'assegnazione o sottrazione arbitraria di punti manuali
-            cardSq.querySelector('.btn-assegna-diretto').addEventListener('click', async () => {
-                const input = cardSq.querySelector('.input-delta-punti');
-                const delta = parseInt(input.value, 10);
-                
-                if (isNaN(delta) || delta === 0) {
-                    alert("Inserisci un valore numerico valido positivo o negativo.");
-                    return;
-                }
-
-                if (confirm(`Confermi di voler applicare una variazione di ${delta} punti alla squadra "${sq.nome}"?`)) {
-                    await adminAggiornaPunteggioDiretto(sq.id, delta);
-                    input.value = "";
-                }
-            });
-
-            contenitoreSquadre.appendChild(cardSq);
-        });
+        tutteLeSquadre = squadre;
+        renderizzaSquadreAdmin(squadre);
     });
 }
 
-// --- ALGORITMO DI CHIUSURA GIOCO E AGGREGAZIONE DATI ---
-async function ELABORA_E_PUBBLICA_CLASSIFICHE() {
+/* ------------------------------------------------------------------ */
+/*  RENDER SQUADRE (FIX PROBLEMI 7 & 8 & 9)                            */
+/* ------------------------------------------------------------------ */
+
+function renderizzaSquadreAdmin(squadre) {
+    const c = document.getElementById('admin-teams-list');
+    if (!c) return;
+    c.innerHTML = '';
+
+    if (squadre.length === 0) {
+        c.innerHTML = `<p class="text-center text-chiaro mt-2">Nessuna squadra registrata.</p>`;
+        return;
+    }
+
+    squadre.forEach((sq, index) => {
+        const missioniCompletate = Object.entries(sq.missioniApprovate || {})
+            .filter(([, v]) => v > 0)
+            .map(([id, v]) => {
+                const m = MISSIONS.find(x => x.id === id);
+                return m ? `<li>${m.name}${v > 1 ? ` ×${v}` : ''}</li>` : '';
+            }).join('');
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.cssText = 'padding:15px; margin-bottom:12px;';
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div>
+                    <span style="font-weight:700; font-size:15px;">${medagliaPosto(index)} ${sq.nome}</span>
+                    <br>
+                    <small style="color:var(--testo-chiaro);">Capitano: ${sq.capitano} · ${sq.membri || 0} membri</small>
+                </div>
+                <span style="font-size:22px; font-weight:700; color:var(--oro-dark);">${sq.punteggio || 0} pt</span>
+            </div>
+
+            <!-- Missioni completate -->
+            <details style="margin-top:10px;">
+                <summary style="cursor:pointer; font-size:13px; color:var(--verde-laurea); font-weight:600;">
+                    📋 Missioni completate (${Object.values(sq.missioniApprovate || {}).reduce((a,b)=>a+b,0)})
+                </summary>
+                <ul style="margin:8px 0 0 16px; font-size:13px; line-height:1.8; color:var(--testo-scuro);">
+                    ${missioniCompletate || '<li><em>Nessuna ancora approvata.</em></li>'}
+                </ul>
+            </details>
+
+            <!-- Correzione rapida punti -->
+            <div class="quick-score-panel" style="margin-top:10px;">
+                <span style="font-size:12px; flex:1; color:var(--testo-chiaro);">Correzione punti:</span>
+                <input type="number" class="input-delta-punti" placeholder="+/- pt" step="1" style="width:80px; text-align:center;">
+                <button class="btn btn-primary btn-small btn-assegna" style="width:auto;">Invia</button>
+            </div>
+
+            <!-- Elimina squadra -->
+            <button class="btn btn-small btn-elimina-squadra" style="background:var(--malus); color:#fff; margin-top:8px; width:100%;">
+                🗑️ Elimina Squadra
+            </button>
+        `;
+
+        // Correzione punti
+        card.querySelector('.btn-assegna').addEventListener('click', async () => {
+            const input = card.querySelector('.input-delta-punti');
+            const delta = parseInt(input.value, 10);
+            if (isNaN(delta) || delta === 0) { alert("Inserisci un valore numerico valido."); return; }
+            if (confirm(`Applicare ${delta > 0 ? '+' : ''}${delta} pt a "${sq.nome}"?`)) {
+                try {
+                    await adminAggiornaPunteggioDiretto(sq.id, delta);
+                    input.value = '';
+                } catch(e) { alert("Errore: " + e.message); }
+            }
+        });
+
+        // Elimina squadra — FIX PROBLEMA 8
+        card.querySelector('.btn-elimina-squadra').addEventListener('click', async () => {
+            if (confirm(`⚠️ Eliminare definitivamente la squadra "${sq.nome}"?\nQuesta azione non è reversibile.`)) {
+                try {
+                    await adminEliminaSquadra(sq.id);
+                } catch(e) { alert("Errore eliminazione: " + e.message); }
+            }
+        });
+
+        c.appendChild(card);
+    });
+}
+
+/* ------------------------------------------------------------------ */
+/*  PREVIEW CLASSIFICA IN TEMPO REALE (FIX PROBLEMA 9)                 */
+/* ------------------------------------------------------------------ */
+
+function renderizzaPreviewClassifica() {
+    const c = document.getElementById('admin-preview-classifica');
+    if (!c) return;
+    c.innerHTML = '';
+
     if (tutteLeSquadre.length === 0) {
-        alert("Impossibile chiudere il gioco: non sono presenti squadre registrate nel database.");
+        c.innerHTML = `<p class="text-center text-chiaro">Nessuna squadra.</p>`;
         return;
     }
 
-    if (!confirm("⚠️ SEI SICURO?\nQuesta azione interromperà il gioco per tutti e pubblicherà le classifiche finali sui telefoni degli invitati!")) {
+    // Classifica capitani (aggregazione lato client)
+    const mappaCapitani = {};
+    CAPITANI.forEach(cap => mappaCapitani[cap] = 0);
+    tutteLeSquadre.forEach(sq => {
+        if (mappaCapitani[sq.capitano] !== undefined)
+            mappaCapitani[sq.capitano] += (sq.punteggio || 0);
+    });
+
+    const classCapitani = Object.entries(mappaCapitani)
+        .map(([nome, pt]) => ({ nome, punteggio: pt }))
+        .sort((a, b) => b.punteggio - a.punteggio);
+
+    // Render classifica capitani
+    const h1 = document.createElement('h4');
+    h1.className = 'title-green';
+    h1.style.marginBottom = '8px';
+    h1.textContent = '🎓 Classifica Capitani (Anteprima)';
+    c.appendChild(h1);
+
+    classCapitani.forEach((cap, i) => {
+        const el = document.createElement('div');
+        el.className = 'team-item';
+        el.style.marginBottom = '6px';
+        el.innerHTML = `
+            <span>${medagliaPosto(i)} <strong>${cap.nome}</strong></span>
+            <span class="text-gold font-bold">${cap.punteggio} pt</span>
+        `;
+        c.appendChild(el);
+    });
+
+    // Render classifica squadre
+    const h2 = document.createElement('h4');
+    h2.className = 'title-green';
+    h2.style.cssText = 'margin-top:16px; margin-bottom:8px;';
+    h2.textContent = '🔥 Classifica Squadre (Anteprima)';
+    c.appendChild(h2);
+
+    tutteLeSquadre.forEach((sq, i) => {
+        const el = document.createElement('div');
+        el.className = 'team-item';
+        el.style.marginBottom = '6px';
+        el.innerHTML = `
+            <span>${medagliaPosto(i)} ${sq.nome} <small style="color:var(--testo-chiaro);">(${sq.capitano})</small></span>
+            <span class="text-gold font-bold">${sq.punteggio || 0} pt</span>
+        `;
+        c.appendChild(el);
+    });
+}
+
+/* ------------------------------------------------------------------ */
+/*  PUBBLICA CLASSIFICA FINALE                                          */
+/* ------------------------------------------------------------------ */
+
+async function elaboraEPubblicaClassifiche() {
+    if (tutteLeSquadre.length === 0) {
+        alert("Nessuna squadra nel database.");
         return;
     }
 
-    // 1. Elaborazione Classifica Squadre (Ordinamento decrescente per punteggio)
-    const classificaSquadreFinali = tutteLeSquadre.map(sq => ({
+    if (!confirm("⚠️ SEI SICURO?\nQuesta azione mostrerà le classifiche finali su tutti i telefoni degli invitati e bloccherà il gioco!")) return;
+
+    const classificaSquadre = tutteLeSquadre.map(sq => ({
         nome: sq.nome,
         capitano: sq.capitano,
         punteggio: sq.punteggio || 0
     })).sort((a, b) => b.punteggio - a.punteggio);
 
-    // 2. Elaborazione Classifica Capitani (Aggregazione matematica dei punteggi di tutte le loro squadre)
     const mappaCapitani = {};
-    
-    // Inizializzazione di sicurezza di tutti i capitani a 0 punti per mostrare anche chi non ha ricevuto squadre
-    const CAPITANI_LISTA = ["Fabrizio", "Lorenzo", "Riccardo", "Sveva", "Ferrantini", "Giada", "Federica", "Adriano"];
-    CAPITANI_LISTA.forEach(cap => mappaCapitani[cap] = 0);
-
-    // Somma dei contributi di ciascuna squadra al proprio capitano di riferimento
+    CAPITANI.forEach(cap => mappaCapitani[cap] = 0);
     tutteLeSquadre.forEach(sq => {
-        if (mappaCapitani[sq.capitano] !== undefined) {
+        if (mappaCapitani[sq.capitano] !== undefined)
             mappaCapitani[sq.capitano] += (sq.punteggio || 0);
-        }
     });
 
-    // Trasformazione della mappa in array strutturato e ordinamento decrescente
-    const classificaCapitaniFinali = Object.keys(mappaCapitani).map(nomeCapitano => ({
-        nome: nomeCapitano,
-        punteggio: mappaCapitani[nomeCapitano]
-    })).sort((a, b) => b.punteggio - a.punteggio);
+    const classificaCapitani = Object.entries(mappaCapitani)
+        .map(([nome, punteggio]) => ({ nome, punteggio }))
+        .sort((a, b) => b.punteggio - a.punteggio);
 
     try {
-        // 3. Spinta dei risultati su Cloud Firestore (Sbloccherà le viste finali di tutti i client connessi)
-        await adminPubblicaClassifica(classificaCapitaniFinali, classificaSquadreFinali);
-        
-        // Aggiorna l'interfaccia visiva dell'admin per confermare l'avvenuto blocco
-        const badgeStato = document.getElementById('admin-game-status-badge');
-        badgeStato.innerText = "Classifiche Pubblicate 📢";
-        badgeStato.style.backgroundColor = "var(--oro)";
-        badgeStato.style.color = "var(--bianco)";
-        
-        alert("🏆 Classifiche finali calcolate e pubblicate con successo su tutti i dispositivi!");
-    } catch (errore) {
-        alert("Errore durante la pubblicazione della classifica: " + errore.message);
+        await adminPubblicaClassifica(classificaCapitani, classificaSquadre);
+        const badge = document.getElementById('admin-game-status-badge');
+        if (badge) {
+            badge.textContent = "Classifiche Pubblicate 📢";
+            badge.style.backgroundColor = "var(--oro)";
+            badge.style.color = "#fff";
+        }
+        alert("🏆 Classifiche pubblicate con successo su tutti i dispositivi!");
+    } catch(e) {
+        alert("Errore pubblicazione: " + e.message);
     }
+}
+
+/* ------------------------------------------------------------------ */
+/*  UTILITY                                                             */
+/* ------------------------------------------------------------------ */
+
+function medagliaPosto(i) {
+    return ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
 }

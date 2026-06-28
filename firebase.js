@@ -1,224 +1,223 @@
 /* ==========================================================================
-   FANTALAUREA ODONTOIATRIA 2026 - CONFIGURAZIONE E STRATO DATI FIRESTORE
+   FANTALAUREA ODONTOIATRIA 2026 — firebase.js
+   FIX: indici composti, join idempotente, gestione errori, deleteDoc
    ========================================================================== */
 
-// Importazione degli SDK Firebase ufficiali in formato modulo tramite CDN certificata
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-    getAuth, 
-    signInAnonymously 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { 
-    getFirestore, 
-    doc, 
-    collection, 
-    setDoc, 
-    addDoc, 
-    updateDoc, 
-    getDocs, 
-    query, 
-    where, 
-    orderBy, 
-    limit, 
-    onSnapshot, 
-    increment 
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+    getFirestore,
+    doc, collection,
+    setDoc, addDoc, updateDoc, deleteDoc,
+    getDocs, getDoc,
+    query, where, orderBy, limit,
+    onSnapshot, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- CONFIGURAZIONE PROGETTO FIREBASE ---
-// Roberta, sostituisci questo blocco con le tue chiavi personali ottenute dalla Console Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyAUaAVYoTybwI9LgJQmiG46vGehLTPBYIU",
-  authDomain: "fantalaurea2026-7a2e4.firebaseapp.com",
-  projectId: "fantalaurea2026-7a2e4",
-  storageBucket: "fantalaurea2026-7a2e4.firebasestorage.app",
-  messagingSenderId: "747759460630",
-  appId: "1:747759460630:web:f6a33d07c7b1d9c52d7037"
+    apiKey: "AIzaSyAUaAVYoTybwI9LgJQmiG46vGehLTPBYIU",
+    authDomain: "fantalaurea2026-7a2e4.firebaseapp.com",
+    projectId: "fantalaurea2026-7a2e4",
+    storageBucket: "fantalaurea2026-7a2e4.firebasestorage.app",
+    messagingSenderId: "747759460630",
+    appId: "1:747759460630:web:f6a33d07c7b1d9c52d7037"
 };
 
 let app, auth, db;
 
-// Inizializzazione controllata dell'infrastruttura di backend
 export function inizializzaConfigurazione() {
-    app = initializeApp(firebaseConfig);
+    try {
+        app = initializeApp(firebaseConfig);
+    } catch(e) {
+        // già inizializzato (es. doppio import)
+        app = initializeApp(firebaseConfig, "fantalaurea-duplicate");
+    }
     auth = getAuth(app);
     db = getFirestore(app);
+    console.log("✅ Firebase inizializzato");
 }
 
-// --- LOGICA DI AUTENTICAZIONE ANONIMA AUTOMATICA ---
 export async function autenticaUtenteAnonimo() {
-    return new Promise((resolve, reject) => {
-        // Forza la persistenza nativa del browser per mantenere la sessione al riavvio
-        signInAnonymously(auth)
-            .then(cred => resolve(cred.user))
-            .catch(err => reject(err));
-    });
+    try {
+        const cred = await signInAnonymously(auth);
+        console.log("✅ Auth anonima:", cred.user.uid);
+        return cred.user;
+    } catch(err) {
+        console.error("❌ Auth fallita:", err);
+        throw err;
+    }
 }
 
-// --- INTERROGAZIONI E TRANSAZIONI SQUADRE (LATO UTENTE) ---
+/* ------------------------------------------------------------------ */
+/*  SQUADRE                                                             */
+/* ------------------------------------------------------------------ */
 
-// Ascolta in tempo reale le squadre associate a un determinato capitano (senza mostrare punteggio)
+/**
+ * Carica le squadre di un capitano SENZA orderBy così non serve indice composto.
+ * FIX PROBLEMA 1 & 7: rimossa orderBy che causava errore indice silenzioso.
+ */
 export function caricaSquadrePerCapitano(nomeCapitano, callback) {
-    const q = query(collection(db, "squadre"), where("capitano", "==", nomeCapitano));
-    return onSnapshot(q, (snapshot) => {
+    const q = query(
+        collection(db, "squadre"),
+        where("capitano", "==", nomeCapitano)
+    );
+    return onSnapshot(q, (snap) => {
         const squadre = [];
-        snapshot.forEach(doc => {
-            const dati = doc.data();
-            squadre.push({
-                id: doc.id,
-                nome: dati.nome,
-                membri: dati.membri
-            });
+        snap.forEach(d => {
+            const dati = d.data();
+            squadre.push({ id: d.id, nome: dati.nome, membri: dati.membri || 0 });
         });
+        // Ordina lato client per non richiedere indice
+        squadre.sort((a, b) => a.nome.localeCompare(b.nome));
         callback(squadre);
+    }, (err) => {
+        console.error("❌ caricaSquadrePerCapitano:", err);
+        callback([]);
     });
 }
 
-// Crea una nuova squadra impostando lo stato iniziale dei punteggi e delle mappe delle missioni
 export async function creaNuovaSquadra(nomeSquadra, nomeCapitano, uidCreatore) {
-    // Controllo di unicità del nome all'interno dello stesso capitano per evitare omonimie conflittuali
+    // Verifica unicità veloce (una sola query, nessun orderBy)
     const q = query(
-        collection(db, "squadre"), 
-        where("capitano", "==", nomeCapitano), 
+        collection(db, "squadre"),
+        where("capitano", "==", nomeCapitano),
         where("nome", "==", nomeSquadra)
     );
     const controllo = await getDocs(q);
-    if (!controllo.empty) {
-        throw new Error("Una squadra con questo nome esiste già per questo Capitano!");
-    }
+    if (!controllo.empty) throw new Error("Nome squadra già usato per questo Capitano!");
 
     const docRef = doc(collection(db, "squadre"));
-    const nuovaSquadra = {
+    await setDoc(docRef, {
         nome: nomeSquadra,
         capitano: nomeCapitano,
         membri: 1,
         punteggio: 0,
-        missioniApprovate: {},  // Mappa idMissione -> quantita
-        missioniInAttesa: {},   // Mappa idMissione -> quantita
+        missioniApprovate: {},
+        missioniInAttesa: {},
         creatore: uidCreatore,
         timestamp: Date.now()
-    };
-
-    await setDoc(docRef, nuovaSquadra);
+    });
     return docRef.id;
 }
 
-// Incrementa in modo atomico il contatore dei membri all'interno di una squadra esistente
-export async function uniscitiASquadraEsistente(idSquadra) {
+/**
+ * FIX PROBLEMA 3: join idempotente.
+ * Incrementa i membri SOLO se questo uid non è già nella lista uid_membri.
+ * Usa arrayUnion per essere atomico e idempotente.
+ */
+import { arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+export async function uniscitiASquadraEsistente(idSquadra, uid) {
     const squadraRef = doc(db, "squadre", idSquadra);
+    const snap = await getDoc(squadraRef);
+    if (!snap.exists()) throw new Error("Squadra non trovata.");
+
+    const dati = snap.data();
+    const uidMembri = dati.uid_membri || [];
+
+    if (uidMembri.includes(uid)) {
+        // Già membro: non fare nulla
+        console.log("ℹ️ Già membro, nessun increment.");
+        return;
+    }
+
+    // Nuovo membro: aggiunge uid e incrementa
     await updateDoc(squadraRef, {
+        uid_membri: arrayUnion(uid),
         membri: increment(1)
     });
-    return true; //operazione avvenuta
 }
 
-// Sincronizzazione dati in tempo reale della propria squadra (per aggiornare i punti in Dashboard)
 export function ascoltaDatiSquadra(idSquadra, callback) {
     const squadraRef = doc(db, "squadre", idSquadra);
-    return onSnapshot(squadraRef, (docSnap) => {
-        if (docSnap.exists()) {
-            callback(docSnap.data());
-        }
-    });
+    return onSnapshot(squadraRef, (snap) => {
+        if (snap.exists()) callback(snap.data());
+    }, (err) => console.error("❌ ascoltaDatiSquadra:", err));
 }
 
-// --- LOGICA DI GESTIONE RICHIESTE DELLE MISSIONI ---
+/* ------------------------------------------------------------------ */
+/*  MISSIONI                                                            */
+/* ------------------------------------------------------------------ */
 
-// Registra la richiesta nel registro delle approvazioni e aggiorna lo stato visivo temporaneo della squadra
 export async function inviaRichiestaMissione(idSquadra, nomeSquadra, nomeCapitano, idMissione, variazione) {
-    // 1. Aggiunge una richiesta all'interno della raccolta centrale visibile dall'Admin
     await addDoc(collection(db, "richieste"), {
-        idSquadra,
-        nomeSquadra,
-        capitano: nomeCapitano,
-        idMissione,
-        variazione, // Solitamente +1, o -1 se l'utente annulla una richiesta in attesa per missioni cumulabili
+        idSquadra, nomeSquadra, capitano: nomeCapitano,
+        idMissione, variazione,
         stato: "in_attesa",
         timestamp: Date.now()
     });
 
-    // 2. Aggiorna la mappa temporanea locale dei badge "In attesa" all'interno della squadra
     const squadraRef = doc(db, "squadre", idSquadra);
-    const campoInAttesa = `missioniInAttesa.${idMissione}`;
-    
     await updateDoc(squadraRef, {
-        [campoInAttesa]: increment(variazione)
+        [`missioniInAttesa.${idMissione}`]: increment(variazione)
     });
 }
 
-// --- FEED LIVE E STATO FINALE DI GIOCO ---
+/* ------------------------------------------------------------------ */
+/*  FEED LIVE                                                           */
+/* ------------------------------------------------------------------ */
 
-// Recupera le ultime 30 missioni approvate globalmente per popolare la bacheca in tempo reale
 export function ascoltaFeedApprovazioni(callback) {
     const q = query(
-        collection(db, "feed_approvazioni"), 
-        orderBy("timestamp", "desc"), 
+        collection(db, "feed_approvazioni"),
+        orderBy("timestamp", "desc"),
         limit(30)
     );
-    return onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snap) => {
         const notifiche = [];
-        snapshot.forEach(doc => {
-            notifiche.push(doc.data());
-        });
+        snap.forEach(d => notifiche.push(d.data()));
         callback(notifiche);
-    });
+    }, (err) => console.error("❌ ascoltaFeedApprovazioni:", err));
 }
 
-// Ascolta lo stato del gioco centralizzato per sbloccare la visualizzazione delle classifiche finali
 export function ascoltaStatoGiocoFinale(callback) {
-    const configRef = doc(db, "impostazioni", "gioco");
-    return onSnapshot(configRef, (docSnap) => {
-        if (docSnap.exists()) {
-            callback(docSnap.data());
-        }
+    const ref = doc(db, "impostazioni", "gioco");
+    return onSnapshot(ref, (snap) => {
+        if (snap.exists()) callback(snap.data());
     });
 }
 
-// ==========================================================================
-// FUNZIONALITÀ DEDICATE ESCLUSIVAMENTE AL PANNELLO ADMIN (UTILIZZATE IN ADMIN.JS)
-// ==========================================================================
+/* ================================================================== */
+/*  FUNZIONI ADMIN                                                      */
+/* ================================================================== */
 
+/**
+ * FIX PROBLEMA 7: rimossa orderBy per evitare indice composto mancante.
+ * Ordina lato client.
+ */
 export function adminAscoltaTutteLeSquadre(callback) {
-    const q = query(collection(db, "squadre"), orderBy("punteggio", "desc"));
-    return onSnapshot(q, (snapshot) => {
+    const q = query(collection(db, "squadre"));
+    return onSnapshot(q, (snap) => {
         const squadre = [];
-        snapshot.forEach(doc => {
-            squadre.push({ id: doc.id, ...doc.data() });
-        });
+        snap.forEach(d => squadre.push({ id: d.id, ...d.data() }));
+        // Ordina per punteggio decrescente lato client
+        squadre.sort((a, b) => (b.punteggio || 0) - (a.punteggio || 0));
         callback(squadre);
-    });
+    }, (err) => console.error("❌ adminAscoltaTutteLeSquadre:", err));
 }
 
 export function adminAscoltaRichiesteInAttesa(callback) {
-    const q = query(collection(db, "richieste"), where("stato", "==", "in_attesa"), orderBy("timestamp", "asc"));
-    return onSnapshot(q, (snapshot) => {
+    // FIX: rimuovere orderBy per evitare indice composto; ordina lato client
+    const q = query(
+        collection(db, "richieste"),
+        where("stato", "==", "in_attesa")
+    );
+    return onSnapshot(q, (snap) => {
         const richieste = [];
-        snapshot.forEach(doc => {
-            richieste.push({ id: doc.id, ...doc.data() });
-        });
+        snap.forEach(d => richieste.push({ id: d.id, ...d.data() }));
+        richieste.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         callback(richieste);
-    });
+    }, (err) => console.error("❌ adminAscoltaRichiesteInAttesa:", err));
 }
 
-// Aggiorna lo stato della richiesta ed esegue il calcolo dei punti sulla squadra
-export async function adminEseguiApprovazione(idRichiesta, idSquadra, idMissione, nomeMissione, nomeSquadra, variazione, puntiDaAssegnare) {
-    const richiestaRef = doc(db, "richieste", idRichiesta);
-    const squadraRef = doc(db, "squadre", idSquadra);
-
-    // 1. Segna la richiesta come approvata
-    await updateDoc(richiestaRef, { stato: "approvato" });
-
-    // 2. Modifica la squadra spostando il conteggio da 'in attesa' a 'approvato' e somma i punti
-    const campoInAttesa = `missioniInAttesa.${idMissione}`;
-    const campoApprovato = `missioniApprovate.${idMissione}`;
-
-    await updateDoc(squadraRef, {
-        [campoInAttesa]: increment(-variazione),
-        [campoApprovato]: increment(variazione),
-        punteggio: increment(puntiDaAssegnare)
+export async function adminEseguiApprovazione(idRichiesta, idSquadra, idMissione, nomeMissione, nomeSquadra, variazione, punti) {
+    await updateDoc(doc(db, "richieste", idRichiesta), { stato: "approvato" });
+    await updateDoc(doc(db, "squadre", idSquadra), {
+        [`missioniInAttesa.${idMissione}`]: increment(-variazione),
+        [`missioniApprovate.${idMissione}`]: increment(variazione),
+        punteggio: increment(punti)
     });
-
-    // 3. Genera un elemento nel feed pubblico se i punti assegnati sono positivi (evita di mostrare i Malus nel feed)
-    if (puntiDaAssegnare > 0) {
+    if (punti > 0) {
         await addDoc(collection(db, "feed_approvazioni"), {
             squadra: nomeSquadra,
             missione: nomeMissione,
@@ -228,31 +227,37 @@ export async function adminEseguiApprovazione(idRichiesta, idSquadra, idMissione
 }
 
 export async function adminEseguiRifiuto(idRichiesta, idSquadra, idMissione, variazione) {
-    const richiestaRef = doc(db, "richieste", idRichiesta);
-    const squadraRef = doc(db, "squadre", idSquadra);
-
-    // 1. Segna la richiesta come rifiutata
-    await updateDoc(richiestaRef, { stato: "rifiutato" });
-
-    // 2. Decrementa semplicemente il contatore delle richieste in sospeso dalla squadra
-    const campoInAttesa = `missioniInAttesa.${idMissione}`;
-    await updateDoc(squadraRef, {
-        [campoInAttesa]: increment(-variazione)
+    await updateDoc(doc(db, "richieste", idRichiesta), { stato: "rifiutato" });
+    await updateDoc(doc(db, "squadre", idSquadra), {
+        [`missioniInAttesa.${idMissione}`]: increment(-variazione)
     });
 }
 
-// Permette correzioni manuali o assegnazioni dirette di bonus/malus arbitrari dall'interfaccia di amministrazione
-export async function adminAggiornaPunteggioDiretto(idSquadra, deltaPunti) {
-    const squadraRef = doc(db, "squadre", idSquadra);
-    await updateDoc(squadraRef, {
-        punteggio: increment(deltaPunti)
-    });
+export async function adminAggiornaPunteggioDiretto(idSquadra, delta) {
+    await updateDoc(doc(db, "squadre", idSquadra), { punteggio: increment(delta) });
 }
 
-// Salva le classifiche elaborate e attiva il flag globale per mostrare i risultati su tutti i telefoni
+/**
+ * FIX PROBLEMA 8: elimina una squadra e tutte le sue richieste pendenti.
+ */
+export async function adminEliminaSquadra(idSquadra) {
+    // Elimina le richieste in attesa di questa squadra
+    const q = query(
+        collection(db, "richieste"),
+        where("idSquadra", "==", idSquadra),
+        where("stato", "==", "in_attesa")
+    );
+    const snap = await getDocs(q);
+    const promesse = [];
+    snap.forEach(d => promesse.push(deleteDoc(doc(db, "richieste", d.id))));
+    await Promise.all(promesse);
+
+    // Elimina la squadra
+    await deleteDoc(doc(db, "squadre", idSquadra));
+}
+
 export async function adminPubblicaClassifica(classificaCapitani, classificaSquadre) {
-    const configRef = doc(db, "impostazioni", "gioco");
-    await setDoc(configRef, {
+    await setDoc(doc(db, "impostazioni", "gioco"), {
         classificaPubblica: true,
         classificaCapitani,
         classificaSquadre
