@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pannello Organizzatore - Fantalaurea 2026</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .admin-nav {
+            display: flex;
+            background: var(--verde-laurea-dark);
+            padding: 5px;
+            gap: 5px;
+        }
+        .admin-nav .btn {
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 10px;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            box-shadow: none;
+        }
+        .admin-nav .btn.active {
+            background: var(--oro);
+            color: var(--bianco);
+        }
+        .admin-card-action {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .btn-approve { background-color: #10B981; color: white; }
+        .btn-reject { background-color: #EF4444; color: white; }
+        .btn-action-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; width: auto; }
+        .quick-score-panel {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+            background: var(--verde-laurea-light);
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .quick-score-panel input {
+            width: 70px;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid var(--oro);
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+
+        <section id="admin-view-login" class="view active">
+            <div class="card container-center">
+                <h1 class="title-gold">⚙️ Area Admin</h1>
+                <p class="text-center">Inserisci la password organizzatore per accedere alla gestione dei punteggi in tempo reale.</p>
+                <input type="password" id="admin-password" placeholder="Password di sicurezza" style="width:100%; padding:14px; border:2px solid var(--oro); border-radius:12px; font-size:16px; outline:none; text-align:center; margin-top:15px;">
+                <button id="btn-admin-login" class="btn btn-primary btn-large mt-2">ACCEDI AL PANNELLO</button>
+            </div>
+        </section>
+
+        <section id="admin-view-panel" class="view hidden" style="padding:0;">
+            
+            <header class="dashboard-header bg-green text-white text-center" style="padding:15px;">
+                <h3>⚙️ Regia Fantalaurea 2026</h3>
+                <p class="subtitle" style="color:var(--oro);">Monitoraggio e Approvazione Prove</p>
+            </header>
+
+            <nav class="admin-nav">
+                <button class="btn active" data-target="admin-tab-requests">📥 Richieste (<span id="admin-count-requests">0</span>)</button>
+                <button class="btn" data-target="admin-tab-teams">🔥 Squadre</button>
+                <button class="btn" data-target="admin-tab-control">🏆 Fine Gioco</button>
+            </nav>
+
+            <main class="dashboard-main" style="padding:15px; padding-bottom:30px;">
+
+                <div id="admin-tab-requests" class="tab-content active">
+                    <h4 class="title-green mt-1">Richieste in Sospeso</h4>
+                    <p class="subtitle">Controlla la foto/video sul telefono della squadra e decidi:</p>
+                    <div id="admin-requests-list" class="list-container mt-1">
+                        </div>
+                </div>
+
+                <div id="admin-tab-teams" class="tab-content hidden">
+                    <h4 class="title-green mt-1">Classifica Squadre in Tempo Reale</h4>
+                    <p class="subtitle">Qui puoi vedere i punteggi nascosti e assegnare Bonus/Malus manuali:</p>
+                    <div id="admin-teams-list" class="list-container mt-1">
+                        </div>
+                </div>
+
+                <div id="admin-tab-control" class="tab-content hidden">
+                    <div class="card gold-border mt-1">
+                        <h4 class="title-gold text-center">Decretazione dei Vincitori 🏆</h4>
+                        <p class="mt-1">Premendo il pulsante in basso il gioco verrà ufficialmente interrotto.</p>
+                        <p>Il sistema calcolerà istantaneamente la somma dei punteggi di tutte le squadre per decretare la classifica finale dei <strong>Capitani</strong> e delle <strong>Squadre</strong>.</p>
+                        <p style="color:var(--malus); font-weight:600;">⚠️ Attenzione: Questa azione invierà un blocco automatico e mostrerà le classifiche finali sui display di tutti gli invitati contemporaneamente!</p>
+                        
+                        <button id="btn-admin-publish" class="btn btn-secondary btn-large mt-2">📢 PUBBLICA CLASSIFICA FINAL</button>
+                    </div>
+                    
+                    <div class="card text-center mt-1">
+                        <p class="subtitle">Stato del Gioco:</p>
+                        <div id="admin-game-status-badge" class="status-badge approved" style="display:inline-block; margin-top:5px;">Gioco in Corso Sincronizzato 🟢</div>
+                    </div>
+                </div>
+
+            </main>
+        </section>
+
+    </div>
+
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
