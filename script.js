@@ -101,18 +101,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // --- CONTROLLO DEL FLUSSO E NAVIGAZIONE (SPA) ---
+// --- CONTROLLO DEL FLUSSO E NAVIGAZIONE (SPA) ---
 function cambiaVista(idVista) {
+    console.log("Cambio vista verso:", idVista);
+    const vistaAttiva = document.getElementById(idVista);
+    
+    // Se non trova la vista, interrompe l'esecuzione e ti avvisa
+    if (!vistaAttiva) {
+        alert("Errore: Impossibile trovare la vista " + idVista);
+        return;
+    }
+
+    // Nasconde tutte le altre
     document.querySelectorAll('.view').forEach(v => {
         v.classList.remove('active');
         v.classList.add('hidden');
     });
-    const vistaAttiva = document.getElementById(idVista);
-    if (vistaAttiva) {
-        vistaAttiva.classList.remove('hidden');
-        // Piccolo delay per permettere il rendering prima dell'animazione CSS
-        setTimeout(() => vistaAttiva.classList.add('active'), 50);
-    }
+
+    // Mostra quella corretta
+    vistaAttiva.classList.remove('hidden');
+    // Piccolo ritardo per assicurare che il display flex venga resettato correttamente dal CSS
+    setTimeout(() => vistaAttiva.classList.add('active'), 50);
 }
+
 
 function avviaFlussoApplicazione() {
     // 1. Gestione Splash Screen iniziale (2 secondi)

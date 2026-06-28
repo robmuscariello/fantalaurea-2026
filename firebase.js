@@ -108,6 +108,7 @@ export async function uniscitiASquadraEsistente(idSquadra) {
     await updateDoc(squadraRef, {
         membri: increment(1)
     });
+    return true; //operazione avvenuta
 }
 
 // Sincronizzazione dati in tempo reale della propria squadra (per aggiornare i punti in Dashboard)
