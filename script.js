@@ -225,7 +225,7 @@ async function selezionaCapitano(nomeCapitano) {
                 <div class="team-item-name">🔥 ${squadra.nome}</div>
                 <div class="team-item-count">${squadra.membri} membri</div>
             `;
-            elementoSquadra.addEventListener('click', () => gestisciAdesioneSquadra(squadra.id, squadra.nome));
+            elementoSquadra.onclick = () => gestisciAdesioneSquadra(squadra.id, squadra.nome));
             contenitoreListe.appendChild(elementoSquadra);
         });
     });
