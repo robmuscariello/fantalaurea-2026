@@ -126,6 +126,7 @@ function cambiaVista(idVista) {
 
 
 function avviaFlussoApplicazione() {
+    return; 
     // 1. Gestione Splash Screen iniziale (2 secondi)
     setTimeout(async () => {
         try {
