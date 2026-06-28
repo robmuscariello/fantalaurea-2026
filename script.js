@@ -133,27 +133,57 @@ async function selezionaCapitano(nome) {
     });
 }
 
-async function gestisciAdesioneSquadra(id, nome) {
-    localStorage.setItem("fantalaurea_2026_team", JSON.stringify({idSquadra: id, nomeSquadra: nome}));
+async function gestisciAdesioneSquadra(idSquadra, nomeSquadra) {
+    console.log("Tentativo di accesso alla squadra:", idSquadra); // Questo ti dice in console se il click funziona
+    
+    // 1. Salvo immediatamente il dato locale
+    localStorage.setItem("fantalaurea_2026_team", JSON.stringify({idSquadra, nomeSquadra}));
+    
     try {
-        await uniscitiASquadraEsistente(id);
-        agganciaAscoltatoreSquadra(id);
-        attivaFeedEStatoGlobale();
+        // 2. Forza subito il cambio vista (senza aspettare Firebase, così l'utente vede movimento)
         cambiaVista('view-dashboard');
-    } catch (e) { alert("Errore: " + e.message); }
+        
+        // 3. Eseguo la logica in background
+        await uniscitiASquadraEsistente(idSquadra);
+        agganciaAscoltatoreSquadra(idSquadra);
+        attivaFeedEStatoGlobale();
+        
+        console.log("Successo: Utente entrato in squadra.");
+    } catch (e) {
+        console.error("Errore durante l'accesso alla squadra:", e);
+        alert("Errore tecnico: " + e.message);
+        // Se c'è errore, torno indietro alla lista squadre per permettere un nuovo tentativo
+        cambiaVista('view-teams'); 
+    }
 }
 
+
+
 async function gestisciCreazioneSquadra() {
+    const btn = document.getElementById('btn-create-team');
     const nome = document.getElementById('new-team-name').value.trim();
-    if (!nome) return alert("Nome non valido!");
+    
+    if (!nome) return alert("Inserisci un nome!");
+    
+    // Disabilito il bottone per evitare click multipli
+    btn.disabled = true;
+    const testoOriginale = btn.innerText;
+    btn.innerText = "Creazione in corso...";
+
     try {
         const id = await creaNuovaSquadra(nome, statoUtente.capitanoSelezionato, statoUtente.uid);
         localStorage.setItem("fantalaurea_2026_team", JSON.stringify({idSquadra: id, nomeSquadra: nome}));
         agganciaAscoltatoreSquadra(id);
         attivaFeedEStatoGlobale();
         cambiaVista('view-dashboard');
-    } catch (e) { alert(e.message); }
+    } catch (e) {
+        alert("Errore: " + e.message);
+        // In caso di errore, riabilito il bottone
+        btn.disabled = false;
+        btn.innerText = testoOriginale;
+    }
 }
+
 
 function agganciaAscoltatoreSquadra(id) {
     ascoltaDatiSquadra(id, (d) => {
