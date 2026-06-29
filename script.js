@@ -91,12 +91,20 @@ let unsubscribeStatoGioco = null;
 /*  AVVIO                                                               */
 /* ------------------------------------------------------------------ */
 
+// --- 1. INIZIALIZZAZIONE E GESTIONE GLOBALE CLICK ---
 document.addEventListener("DOMContentLoaded", () => {
-    // Aggiungi solo questo controllo all'inizio:
+    // PROTEZIONE: se siamo nella pagina admin, blocchiamo lo script giocatore
     if (window.location.pathname.includes("admin.html")) {
-        console.log("Sono nella pagina Admin, script giocatore disattivato.");
-        return; 
+        console.log("Script giocatore disattivato: siamo nel pannello Admin.");
+        return; // Esce e non esegue nient'altro
     }
+
+    // Se non siamo in admin, avviamo normalmente
+    inizializzaConfigurazione();
+    impostaAscoltatoriGlobali();
+    avviaFlussoApplicazione();
+});
+
     
     // Il resto del tuo codice originale rimane INVARIATO qui sotto
     inizializzaConfigurazione();
