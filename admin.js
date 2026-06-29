@@ -33,13 +33,23 @@ let tutteLeSquadre = [];
 /*  INIZIALIZZAZIONE                                                    */
 /* ------------------------------------------------------------------ */
 
+// --- INIZIALIZZAZIONE ---
 document.addEventListener("DOMContentLoaded", () => {
-    // Controlla se siamo davvero nella pagina Admin cercando un elemento unico
-    if (document.getElementById('btn-admin-login')) {
-        inizializzaConfigurazione();
-        CONFIGURA_EVENTI_ADMIN();
+    // CONTROLLO DI SICUREZZA: 
+    // Se non troviamo l'ID della casella password, usciamo subito!
+    const inputPassword = document.getElementById('admin-password');
+    if (!inputPassword) {
+        console.log("Non sono nella pagina Admin, esco.");
+        return; 
     }
+
+    // Se arriviamo qui, siamo sicuramente nel pannello Admin
+    inizializzaConfigurazione();
+    
+    // Inizializza i bottoni solo dopo aver verificato che la pagina è quella giusta
+    CONFIGURA_EVENTI_ADMIN();
 });
+
 
 
 /* ------------------------------------------------------------------ */
