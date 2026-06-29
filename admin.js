@@ -38,10 +38,9 @@ let tutteLeSquadre = [];
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Controlliamo se esiste l'elemento specifico del login admin
     const btnLogin = document.getElementById('btn-admin-login');
-    
+
     if (!btnLogin) {
         // Se non siamo nella pagina Admin, usciamo immediatamente 
-        // e non avviamo il resto della logica che causa il crash
         console.log("App non rilevata come Pannello Admin, blocco esecuzione.");
         return;
     }
@@ -49,15 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Se siamo qui, il bottone esiste: avviamo tutto in sicurezza
     inizializzaConfigurazione();
     CONFIGURA_EVENTI_ADMIN();
+    console.log("Pannello Admin caricato con successo!");
 });
 
-
-    // Se arriviamo qui, siamo sicuramente nel pannello Admin
-    inizializzaConfigurazione();
-    
-    // Inizializza i bottoni solo dopo aver verificato che la pagina è quella giusta
-    CONFIGURA_EVENTI_ADMIN();
-});
 
 
 
