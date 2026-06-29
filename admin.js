@@ -34,14 +34,23 @@ let tutteLeSquadre = [];
 /* ------------------------------------------------------------------ */
 
 // --- INIZIALIZZAZIONE ---
+// --- INIZIALIZZAZIONE SICURA ---
 document.addEventListener("DOMContentLoaded", () => {
-    // CONTROLLO DI SICUREZZA: 
-    // Se non troviamo l'ID della casella password, usciamo subito!
-    const inputPassword = document.getElementById('admin-password');
-    if (!inputPassword) {
-        console.log("Non sono nella pagina Admin, esco.");
-        return; 
+    // 1. Controlliamo se esiste l'elemento specifico del login admin
+    const btnLogin = document.getElementById('btn-admin-login');
+    
+    if (!btnLogin) {
+        // Se non siamo nella pagina Admin, usciamo immediatamente 
+        // e non avviamo il resto della logica che causa il crash
+        console.log("App non rilevata come Pannello Admin, blocco esecuzione.");
+        return;
     }
+
+    // 2. Se siamo qui, il bottone esiste: avviamo tutto in sicurezza
+    inizializzaConfigurazione();
+    CONFIGURA_EVENTI_ADMIN();
+});
+
 
     // Se arriviamo qui, siamo sicuramente nel pannello Admin
     inizializzaConfigurazione();
