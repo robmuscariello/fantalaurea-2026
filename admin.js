@@ -4,8 +4,6 @@
         gestione errori, tab navigazione robusta
    ========================================================================== */
 
-window.IS_ADMIN_PAGE = true;
-
 import {
     inizializzaConfigurazione,
     adminAscoltaTutteLeSquadre,
