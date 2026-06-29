@@ -92,9 +92,15 @@ let unsubscribeStatoGioco = null;
 /* ------------------------------------------------------------------ */
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Aggiungi solo questo controllo all'inizio:
+    if (window.location.pathname.includes("admin.html")) {
+        console.log("Sono nella pagina Admin, script giocatore disattivato.");
+        return; 
+    }
+    
+    // Il resto del tuo codice originale rimane INVARIATO qui sotto
     inizializzaConfigurazione();
-    impostaAscoltatoriGlobali();
-    avviaFlussoApplicazione();
+    // ... (il resto del tuo codice)
 });
 
 /* ------------------------------------------------------------------ */
