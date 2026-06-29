@@ -34,9 +34,13 @@ let tutteLeSquadre = [];
 /* ------------------------------------------------------------------ */
 
 document.addEventListener("DOMContentLoaded", () => {
-    inizializzaConfigurazione();
-    configuraEventiAdmin();
+    // Controlla se siamo davvero nella pagina Admin cercando un elemento unico
+    if (document.getElementById('btn-admin-login')) {
+        inizializzaConfigurazione();
+        CONFIGURA_EVENTI_ADMIN();
+    }
 });
+
 
 /* ------------------------------------------------------------------ */
 /*  LOGIN E NAVIGAZIONE TAB                                             */
