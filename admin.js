@@ -37,24 +37,15 @@ let tutteLeSquadre = [];
 // --- INIZIALIZZAZIONE ---
 // --- INIZIALIZZAZIONE SICURA ---
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Controlliamo se siamo davvero nella pagina Admin
-    const btnLogin = document.getElementById('btn-admin-login');
+    // 1. Inizializziamo le funzioni base
+    inizializzaConfigurazione();
     
-    // Se non troviamo il bottone, usciamo (evita che Admin cerchi di fare il giocatore)
-    if (!btnLogin) return;
-
-    // 2. Inizializza SOLO le cose dell'Admin
-    inizializzaConfigurazione(); // (Se questa è nel file admin.js va bene)
+    // 2. Chiamiamo la funzione che collega TUTTI i bottoni (Login incluso)
+    configuraEventiAdmin(); 
     
-    // RIMUOVI O COMMENTA le funzioni che appartengono all'app dei giocatori
-    // NON CHIAMARE: impostaAscoltatoriGlobali();
-    // NON CHIAMARE: avviaFlussoApplicazione();
-
-    // 3. Colleghiamo il pulsante di accesso
-    btnLogin.addEventListener('click', () => {
-        // ... (il tuo codice di login)
-    });
+    console.log("Pannello Admin caricato!");
 });
+
 
 
 
