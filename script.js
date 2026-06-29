@@ -103,7 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
     inizializzaConfigurazione();
     impostaAscoltatoriGlobali();
     avviaFlussoApplicazione();
-});
 
     
     // Il resto del tuo codice originale rimane INVARIATO qui sotto
