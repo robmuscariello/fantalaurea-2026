@@ -46,16 +46,16 @@ export const MISSIONS = [
     { id: "brindisi",               category: "goliardia", name: "Il Brindisi",                 points:  5,  desc: "Brindisi collettivo urlato a gran voce per il capitano." },
     { id: "brindisi_rima",          category: "goliardia", name: "Bonus brindisi in rima",      points:  3,  desc: "Richiedi questo bonus se il brindisi è in rima." },
     { id: "curva_sud",              category: "goliardia", name: "Curva Sud",                   points:  8,  desc: "Fate partire un coro dedicato al vostro capitano e coinvolgete più persone possibili" },
-    { id: "celebrita",              category: "goliardia", name: "Momento Celebrità",           points:  4,  desc: "Ottenete l'autografo di uno dei capitani sul braccio di un membro della vostra squadra." },
+    { id: "celebrita",              category: "goliardia", name: "Momento Celebrità",           points:  4,  desc: "Ottenete l autografo di uno dei capitani sul braccio di un membro della vostra squadra." },
     { id: "scrocco",                category: "goliardia", name: "Campioni nello Scrocco",      points:  2,  desc: "Fatevi offrire una sigaretta o una terea da un capitano avversario senza rivelare la missione (+1 per ogni sigaretta scroccata).", cumulable: true },
     { id: "furto_corona",           category: "goliardia", name: "Furto della Corona",          points: 15,  desc: "Nascondete temporaneamente la corona d'alloro di un capirano avversario." },
-    { id: "amici_sempre",           category: "goliardia", name: "Amici da Sempre",             points:  5,  desc: "Presentatevi a un capitano che non vi conosce fingendo cin naturalezza di essere amici da moltissimi anni." },
+    { id: "amici_sempre",           category: "goliardia", name: "Amici da Sempre",             points:  5,  desc: "Presentatevi a un capitano che non vi conosce fingendo con naturalezza di essere amici da moltissimi anni." },
     { id: "assemblea",              category: "goliardia", name: "Assemblea Straordinaria",     points: 15,  desc: "Riunire tutte le squadre per partecipare a un brindisi collettivo." },
     { id: "cronaca_gloria",         category: "social",    name: "Cronaca della Gloria",        points:  5,  desc: "Pubblicate una storia instagram in cui siano visibili il capitano la corona e la tesi." },
     { id: "risposte_auguri",        category: "social",    name: "Ogni risposta agli auguri",   points:  1,  desc: "Ottenete +1punto per ogni risposta alla storia per fare gli auguri", cumulable: true },
     { id: "just_dance",             category: "social",    name: "Just Dance",                  points:  8,  desc: "Video TikTok/Reel di un ballo di gruppo coreografato." },
     { id: "ambasciatore",           category: "speciali",  name: "Ambasciatore Partenopeo",     points:  5,  desc: "Registrare un video in cui Fabrizio pronuncia la frase Forza Napoli." },
-    { id: "no_vabbe",               category: "speciali",  name: "No Vabbè",                    points:  8,  desc: "Fate pronunciare a Riccardo l'esclamazione "no vabbè" per 5 volte senza fargli capire la missione" },
+    { id: "no_vabbe",               category: "speciali",  name: "No Vabbè",                    points:  8,  desc: "Fate pronunciare a Riccardo l'esclamazione no vabbè per 5 volte senza fargli capire la missione" },
     { id: "cuozzo",                 category: "speciali",  name: "Modalità Cuozzo",             points:  6,  desc: "Registrate un video in cui Lorenzo dice spontaneamente la parola cucciola." },
     { id: "bocciato_orale",         category: "malus",     name: "Bocciato all'Orale",          points:-10,  desc: "il vostro capitano rifiuta di partecipare a una sfida proposta dalla squadra" },
     { id: "politico18",             category: "malus",     name: "18 Politico",                 points:-15,  desc: "Il vostro capitano consegue il voto più basso tra i festeggiati" },
@@ -67,7 +67,7 @@ export const MISSIONS = [
     { id: "creativita_insufficiente",category:"malus",     name: "Creatività Insufficiente",    points: -5,  desc: "la squadra sceglie un nome poco originale o privo di fantasia." },
     { id: "tradimento",             category: "malus",     name: "Tradimento Accademico",       points: -8,  desc: "un membro della squadra compare nella foto ufficiale di una squadra avversaria" },
     { id: "crisi_diplomatica",      category: "malus",     name: "Crisi Diplomatica",           points:-10,  desc: "un membro della squadra da origine a una discussione o litigio durante i festeggiamenti" },
-    { id: "assente_annuario",       category: "malus",     name: "Assente all'Annuario",        points: -8,  desc: "la squadra dimentics di scattare la foto di gruppo insieme al proprio capitano." }
+    { id: "assente_annuario",       category: "malus",     name: "Assente all'Annuario",        points: -8,  desc: "la squadra dimentica di scattare la foto di gruppo insieme al proprio capitano." }
 ];
 
 /* ------------------------------------------------------------------ */
