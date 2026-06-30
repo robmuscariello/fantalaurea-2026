@@ -74,7 +74,7 @@ export const MISSIONS = [
 
 { id: "maledetta_primavera", category: "capitano", name: "Maledetta Primavera", points: 8, desc: "Convincete Giada a cantare almeno un ritornello di 'Maledetta Primavera'." },
 
-{ id: "fuori_controllo", category: "capitano", name: "Fuori Controllo", points: 6, desc: "Il vostro Capitano si lascia andare ai festeggiamenti in modo palesemente euforico." },
+{ id: "fuori_controllo", category: "capitano", name: "Fuori Controllo", points: 6, desc: "Il vostro Capitano si lascia andare ai festeggiamenti in modo dignitosamente brillo" },
 
 { id: "eleganza_alternativa", category: "capitano", name: "Eleganza Alternativa", points: 4, desc: "Il vostro Capitano indossa una cravatta con una fantasia evidente o particolarmente originale." },
 
