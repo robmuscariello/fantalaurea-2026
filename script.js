@@ -67,7 +67,45 @@ export const MISSIONS = [
     { id: "creativita_insufficiente",category:"malus",     name: "Creatività Insufficiente",    points: -5,  desc: "la squadra sceglie un nome poco originale o privo di fantasia." },
     { id: "tradimento",             category: "malus",     name: "Tradimento Accademico",       points: -8,  desc: "un membro della squadra compare nella foto ufficiale di una squadra avversaria" },
     { id: "crisi_diplomatica",      category: "malus",     name: "Crisi Diplomatica",           points:-10,  desc: "un membro della squadra da origine a una discussione o litigio durante i festeggiamenti" },
-    { id: "assente_annuario",       category: "malus",     name: "Assente all'Annuario",        points: -8,  desc: "la squadra dimentica di scattare la foto di gruppo insieme al proprio capitano." }
+    { id: "assente_annuario",       category: "malus",     name: "Assente all'Annuario",        points: -8,  desc: "la squadra dimentica di scattare la foto di gruppo insieme al proprio capitano." },
+{id: "doppia_corona", category: "capitano", name: "Doppia Corona", points: 10, desc: "Un membro della vostra squadra si laurea nello stesso giorno del vostro Capitano." },
+
+{ id: "visita_controllo", category: "capitano", name: "Visita di Controllo", points: 5, desc: "Fatevi visitare dal vostro Capitano simulando una breve visita odontoiatrica." },
+
+{ id: "maledetta_primavera", category: "capitano", name: "Maledetta Primavera", points: 8, desc: "Convincete Giada a cantare almeno un ritornello di 'Maledetta Primavera'." },
+
+{ id: "fuori_controllo", category: "capitano", name: "Fuori Controllo", points: 6, desc: "Il vostro Capitano si lascia andare ai festeggiamenti in modo palesemente euforico." },
+
+{ id: "eleganza_alternativa", category: "capitano", name: "Eleganza Alternativa", points: 4, desc: "Il vostro Capitano indossa una cravatta con una fantasia evidente o particolarmente originale." },
+
+{ id: "tesi_unica", category: "capitano", name: "La Tesi Unica", points: 6, desc: "Il vostro Capitano possiede una tesi con un colore diverso da quello di tutti gli altri laureandi." },
+
+// 📸 PROVE FOTOGRAFICHE
+{ id: "album_ricordi", category: "foto", name: "Album dei Ricordi", points: 5, desc: "Scattate una foto di squadra utilizzando gli sticker ufficiali del Fantalaurea." },
+
+{ id: "king_kong", category: "foto", name: "King Kong", points: 10, desc: "Registrate un video insieme a Ferrantini mentre imitate una scimmia." },
+
+// 🎉 GOLIARDIA UNIVERSITARIA
+{ id: "cabaret", category: "goliardia", name: "Cabaret Universitario", points: 5, desc: "Raccontate una barzelletta a Gianfreda riuscendo a coinvolgerlo nel gioco." },
+
+{ id: "bacio_accademico", category: "goliardia", name: "Bacio Accademico", points: 15, desc: "Due Capitani appartenenti a squadre differenti si scambiano un bacio a stampo." },
+
+{ id: "free_the_nipple", category: "goliardia", name: "Free the Nipple", points: 8, desc: "Un membro della vostra squadra realizza una memorabile scapezzolata durante i festeggiamenti." },
+
+// 💀 MALUS
+{ id: "coprifuoco", category: "malus", name: "Coprifuoco Anticipato", points: -5, desc: "Un membro della vostra squadra lascia la festa prima della mezzanotte." },
+
+{ id: "niente_torta", category: "malus", name: "Niente Dolce", points: -2, desc: "Un membro della vostra squadra rifiuta di mangiare la torta dei festeggiamenti." },
+
+{ id: "troppo_elegante", category: "malus", name: "Troppo Elegante", points: -3, desc: "Il vostro Capitano mantiene la giacca indossata per tutta la durata della festa." },
+
+{ id: "sondaggio_fantasma", category: "malus", name: "Sondaggio Fantasma", points: -2, desc: "Un membro della squadra non aveva risposto al sondaggio organizzativo prima dell'evento." },
+
+{ id: "black_edition", category: "malus", name: "Black Edition", points: -4, desc: "Il vostro Capitano si presenta con un outfit completamente nero." },
+
+{ id: "dress_code", category: "malus", name: "Dress Code Violato", points: -3, desc: "Un membro della vostra squadra partecipa ai festeggiamenti senza indossare una camicia." },
+
+{ id: "mani_nel_sacco", category: "malus", name: "Mani nel Sacco", points: -15, desc: "Un membro della squadra viene sorpreso a imbrogliare durante il Fantalaurea." }
 ];
 
 /* ------------------------------------------------------------------ */
