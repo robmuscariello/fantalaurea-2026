@@ -81,21 +81,21 @@ export const MISSIONS = [
 { id: "tesi_unica", category: "capitano", name: "La Tesi Unica", points: 6, desc: "Il vostro Capitano possiede una tesi con un colore diverso da quello di tutti gli altri laureandi." },
 
 // 📸 PROVE FOTOGRAFICHE
-{ id: "album_ricordi", category: "foto", name: "Album dei Ricordi", points: 5, desc: "Scattate una foto di squadra utilizzando gli sticker ufficiali del Fantalaurea." },
+{ id: "album_ricordi", category: "foto", name: "Album dei Ricordi", points: 5, desc: "Scattate una foto di squadra utilizzando gli sticker " },
 
 { id: "king_kong", category: "foto", name: "King Kong", points: 10, desc: "Registrate un video insieme a Ferrantini mentre imitate una scimmia." },
 
 // 🎉 GOLIARDIA UNIVERSITARIA
-{ id: "cabaret", category: "goliardia", name: "Cabaret Universitario", points: 5, desc: "Raccontate una barzelletta a Gianfreda riuscendo a coinvolgerlo nel gioco." },
+{ id: "cabaret", category: "goliardia", name: "Cabaret Universitario", points: 5, desc: "Raccontate una barzelletta a Gianfreda" },
 
-{ id: "bacio_accademico", category: "goliardia", name: "Bacio Accademico", points: 15, desc: "Due Capitani appartenenti a squadre differenti si scambiano un bacio a stampo." },
+{ id: "bacio_accademico", category: "goliardia", name: "Bacio Accademico", points: 15, desc: "Due Capitani di squadre differenti si scambiano un bacio a stampo omosessuale" },
 
-{ id: "free_the_nipple", category: "goliardia", name: "Free the Nipple", points: 8, desc: "Un membro della vostra squadra realizza una memorabile scapezzolata durante i festeggiamenti." },
+{ id: "free_the_nipple", category: "goliardia", name: "Free the Nipple", points: 8, desc: "il capitano della vostra squadra realizza una memorabile scapezzolata durante i festeggiamenti." },
 
 // 💀 MALUS
 { id: "coprifuoco", category: "malus", name: "Coprifuoco Anticipato", points: -5, desc: "Un membro della vostra squadra lascia la festa prima della mezzanotte." },
 
-{ id: "niente_torta", category: "malus", name: "Niente Dolce", points: -2, desc: "Un membro della vostra squadra rifiuta di mangiare la torta dei festeggiamenti." },
+{ id: "niente_torta", category: "malus", name: "Niente Dolce", points: -2, desc: "Un membro della vostra squadra rifiuta di mangiare la torta " },
 
 { id: "troppo_elegante", category: "malus", name: "Troppo Elegante", points: -3, desc: "Il vostro Capitano mantiene la giacca indossata per tutta la durata della festa." },
 
